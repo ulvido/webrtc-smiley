@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WEBRTC Demo</title>
+  <link rel="shortcut icon" href="#" />
+  <link rel="stylesheet" href="style.css">
+  <script defer src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script defer src="webrtc.js"></script>
+</head>
+
+<body>
+  <h1>WEBRTC</h1>
+  <hr>
+  <div class="wrapper">
+    <input type="button" id="btncall" value="CALL">
+    <textarea placeholder="paste offer" name="offer" id="sdp-offer" rows="4"></textarea>
+    <input type="button" id="btnanswer" value="ANSWER">
+    <textarea placeholder="paste answer" name="answer" id="sdp-answer" rows="4"></textarea>
+    <input type="button" id="btnaccept" value="ACCEPT">
+  </div>
+  <div class="msg-wrapper">
+    <h5>DATACHANNEL: <span id="datachannel-label"></span></h5>
+    <div class="emoji-wrapper">
+      <input type="button" class="btn-emoji" value="👋">
+      <input type="button" class="btn-emoji" value="👍🏻">
+      <input type="button" class="btn-emoji" value="🔥">
+      <input type="button" class="btn-emoji" value="😎">
+      <input type="button" class="btn-emoji" value="🧿">
+      <input type="button" class="btn-emoji" value="🙋🏻‍♂️">
+    </div>
+    <hr>
+    <div id="messages"></div>
+  </div>
+</body>
+
+</html>
