@@ -30,21 +30,25 @@ pc.addEventListener("connectionstatechange", e => {
   console.log("CONNECTION STATE CHANGED TO: ", pc.connectionState)
 });
 
+pc.addEventListener("icecandidate", e => {
+  console.log("ICE Candidate Detected!")
+  console.log(e.candidate)
+  if (e.candidate) {
+    console.log("+ICE Candidate Added.")
+    pc.addIceCandidate(e.candidate);
+  }
+  if (pc?.localDescription?.type === "offer") {
+    offerSdpArea.value = JSON.stringify(pc.localDescription);
+  } else {
+    answerSdpArea.value = JSON.stringify(pc.localDescription);
+  }
+});
+
 // create offer
 const createOffer = () => new Promise(async (resolve, reject) => {
   const offerDescription = await pc.createOffer();
   await pc.setLocalDescription(offerDescription);
   offerSdpArea.value = JSON.stringify(offerDescription);
-
-  pc.addEventListener("icecandidate", e => {
-    console.log("ICE Candidate Detected!")
-    console.log(e.candidate)
-    if (e.candidate) {
-      console.log("+ICE Candidate Added.")
-      pc.addIceCandidate(e.candidate);
-      offerSdpArea.value = JSON.stringify(pc.localDescription);
-    }
-  });
 
   return resolve(offerDescription)
 });
@@ -55,16 +59,6 @@ const createAnswer = (offerSDP) => new Promise(async (resolve, reject) => {
   const answerDescription = await pc.createAnswer();
   await pc.setLocalDescription(answerDescription);
   answerSdpArea.value = JSON.stringify(answerDescription);
-
-  pc.addEventListener("icecandidate", e => {
-    console.log("ICE Candidate Detected!")
-    console.log(e.candidate)
-    if (e.candidate) {
-      console.log("+ICE Candidate Added.")
-      pc.addIceCandidate(e.candidate);
-      answerSdpArea.value = JSON.stringify(pc.localDescription);
-    }
-  });
 
   return resolve(answerDescription)
 });
