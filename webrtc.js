@@ -1,4 +1,7 @@
 // ELEMENTS
+const createBtn = document.getElementById("btn-create-connection");
+const cancelBtn = document.getElementById("btn-cancel-create");
+const datachannelBtn = document.getElementById("btn-create-datachannel");
 const callBtn = document.getElementById("btncall");
 const answerBtn = document.getElementById("btnanswer");
 const acceptBtn = document.getElementById("btnaccept");
@@ -26,25 +29,40 @@ const config = {
   iceCandidatePoolSize: 10,
 }
 
-let pc = new RTCPeerConnection(config);
+let pc; // peer connection
+let dcs = []; // datachannels
+let dcMap = {};  // datachannel maps local label : remote label 
 
-pc.addEventListener("connectionstatechange", e => {
-  console.log("CONNECTION STATE CHANGED TO: ", pc.connectionState)
-});
+const createPeerConnection = config => {
+  pc = new RTCPeerConnection(config);
 
-pc.addEventListener("icecandidate", e => {
-  console.log("ICE Candidate Detected!")
-  console.log(e.candidate)
-  if (e.candidate) {
-    console.log("+ICE Candidate Added.")
-    pc.addIceCandidate(e.candidate);
-  }
-  if (pc?.localDescription?.type === "offer") {
-    offerSdpArea.value = JSON.stringify(pc.localDescription);
-  } else {
-    answerSdpArea.value = JSON.stringify(pc.localDescription);
-  }
-});
+  pc.addEventListener("connectionstatechange", e => {
+    console.log("CONNECTION STATE CHANGED TO: ", pc.connectionState)
+  });
+
+  pc.addEventListener("signalingstatechange", e => {
+    console.log("SIGNAL STATE CHANGED");
+    console.log(e);
+    console.log(pc.signalingState);
+  });
+
+  pc.addEventListener("icecandidate", e => {
+    console.log("ICE Candidate Detected!")
+    console.log(e.candidate)
+    if (e.candidate) {
+      if (pc?.localDescription?.type === "offer" && !pc.remoteDescription) return; // remote description yok erroru olmasın diye
+      console.log("+ICE Candidate Added.")
+      pc.addIceCandidate(e.candidate);
+    }
+    if (pc?.localDescription?.type === "offer") {
+      offerSdpArea.value = JSON.stringify(pc.localDescription);
+    } else {
+      answerSdpArea.value = JSON.stringify(pc.localDescription);
+    }
+  });
+
+  console.log(pc)
+}
 
 // create offer
 const createOffer = () => new Promise(async (resolve, reject) => {
@@ -72,42 +90,81 @@ const acceptAnswer = (answerSDP) => new Promise(async (resolve, reject) => {
   return resolve()
 });
 
-pc.addEventListener("signalingstatechange", e => {
-  console.log("SIGNAL STATE CHANGED");
-  console.log(e);
-  console.log(pc.signalingState);
-});
-
-
 // DATACHANNEL
-const dc = pc.createDataChannel("papi data channel");
+const createDataChannel = async () => {
 
-pc.addEventListener("datachannel", event => {
-  const dc = event.channel;
-  // console.group(dc)
+  const label = "channel-" + Date.now();
+  const dc = await pc.createDataChannel(label);
+  dcs.push(dc);
 
-  dc.addEventListener("open", (event) => {
-    console.log("DATACHANNEL OPENED", dc);
-    msgWrapper.style.visibility = "visible";
-    connectionWrapper.style.display = "none";
-    channelLabel.innerText = dc.label;
+  pc.addEventListener("datachannel", event => {
+    const channel = event.channel;
+
+    console.log("DATACHANNEL INITIATED", channel);
+
+    channel.addEventListener("open", (event) => {
+      console.log("DATACHANNEL OPENED", channel);
+      dcMap[channel.label] = label;
+      msgWrapper.style.visibility = "visible";
+      channelLabel.innerText = Object.keys(dcMap).map(remoteLabel => `<<${dcMap[remoteLabel]}__${remoteLabel}>>`).join(" | ");
+      // channelLabel.innerText = dcs.map(dc => dc.label).join(" | ");
+      createBtn.style.display = "block";
+      cancelBtn.style.display = "none";
+      datachannelBtn.style.display = "none";
+      connectionWrapper.style.display = "none";
+    });
+
+    channel.addEventListener("close", event => {
+      console.log("DATACHANNEL CLOSED", channel);
+      // ...
+    });
+
+    channel.addEventListener("message", e => {
+      console.log("received e:", e);
+      console.log("received:", e.data);
+      messages.innerText += e.data;
+      window.scrollTo(0, document.body.scrollHeight);
+
+      // eğer ana makina ise mesajları forward etsin.
+      if (pc?.localDescription?.type === "offer") {
+        const senderRemoteLabel = e?.explicitOriginalTarget?.label;
+        const senderlocalLabel = dcMap[senderRemoteLabel] || null;
+        if (senderlocalLabel) {
+          let otherChannels = dcs.filter(dc => dc.label !== senderlocalLabel);
+          if (otherChannels) {
+            otherChannels.map(dc => dc.send(e.data));
+          }
+        }
+      }
+    })
   });
 
-  dc.addEventListener("close", event => {
-    console.log("DATACHANNEL CLOSED", dc);
-    // ...
-  });
-
-  dc.addEventListener("message", e => {
-    console.log("received:", e.data);
-    messages.innerText += e.data;
-    window.scrollTo(0, document.body.scrollHeight);
-  })
-});
-
-console.log(pc)
+  console.log(pc)
+}
 
 // ELEMENT EVENTS
+createBtn.addEventListener("click", e => {
+  createBtn.style.display = "none";
+  cancelBtn.style.display = "block";
+  datachannelBtn.style.display = "block";
+  connectionWrapper.style.display = "flex";
+  offerSdpArea.value = "";
+  answerSdpArea.value = "";
+  createPeerConnection(config);
+})
+
+cancelBtn.addEventListener("click", e => {
+  createBtn.style.display = "block";
+  cancelBtn.style.display = "none";
+  datachannelBtn.style.display = "none";
+  connectionWrapper.style.display = "none";
+  pc.close();
+});
+
+datachannelBtn.addEventListener("click", e => {
+  createDataChannel();
+});
+
 callBtn.addEventListener("click", e => {
   createOffer();
 })
@@ -139,6 +196,12 @@ emojiBtnList.forEach(btn => {
   btn.addEventListener("click", e => {
     messages.innerText += e.target.value;
     window.scrollTo(0, document.body.scrollHeight);
-    dc.send(e.target.value)
+    console.log("dcs", dcs);
+    for (let i = 0; i < dcs.length; i++) {
+      dcs[i].send(e.target.value)
+    }
+    // dcs.forEach(dc => {
+    //   dc.send(e.target.value)
+    // })
   })
 })

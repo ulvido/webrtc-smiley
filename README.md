@@ -26,3 +26,7 @@ webrtc bağlantı kurulması
 5. oluşan answer'ı ilk makinaya gönder (whatsapp vs. ile ver)
 6. ilk makinada gelen answer SDP'yi answer yerine yapıştırıp accept'e bas.
 7. bağlantı kuruldu. smileylere basın birbirinize göndereceksiniz.
+
+##### - GOTCHA
+
+> offer oluşturmadan önce ya `mediastream` ya da `datachannel`'dan <ins>en az birini</ins> oluşturman gerekiyor. aksi halde o zaman ne halt yemeye bağlanıyon hayırdır gibisinden hata veriyor.  
