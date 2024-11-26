@@ -9,6 +9,8 @@ const msgWrapper = document.querySelector(".msg-wrapper");
 const channelLabel = document.getElementById("datachannel-label");
 const messages = document.getElementById("messages");
 const emojiBtnList = document.querySelectorAll(".btn-emoji");
+const btnCopyOffer = document.getElementById("btn-copy-offer");
+const btnCopyAnswer = document.getElementById("btn-copy-answer");
 
 // WEBRTC
 const config = {
@@ -123,7 +125,16 @@ acceptBtn.addEventListener("click", e => {
   }
   acceptAnswer(answerSdpArea.value.trim());
 })
-
+btnCopyOffer.addEventListener("click", e => {
+  offerSdpArea.select();
+  offerSdpArea.setSelectionRange(0, 99999); // For mobile devices
+  navigator.clipboard.writeText(offerSdpArea.value);
+})
+btnCopyAnswer.addEventListener("click", e => {
+  answerSdpArea.select();
+  answerSdpArea.setSelectionRange(0, 99999); // For mobile devices
+  navigator.clipboard.writeText(answerSdpArea.value);
+})
 emojiBtnList.forEach(btn => {
   btn.addEventListener("click", e => {
     messages.innerText += e.target.value;
