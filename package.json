@@ -1,0 +1,15 @@
+{
+  "name": "webrtc-smiley",
+  "version": "1.0.0",
+  "description": "ana site server (https 5000)\r ```bash\r npx ssl-serve --ssl\r ```",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}

@@ -2,17 +2,7 @@
 
 ana site server (https 5000)
 ```bash
-npx ssl-serve --ssl
-```
-
-docker ile
-```bash
-docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v $(pwd):/data -w /data -p 5000:5000 node:20.15.0-bookworm-slim npx ssl-serve --ssl
-```
-
-sqlite testleri (http 3000)
-```bash
-npx serve sqlite-wasm-3470000\
+npm start
 ```
 
 ##### Sertifika Oluşturmak
