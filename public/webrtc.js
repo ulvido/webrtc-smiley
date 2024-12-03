@@ -15,6 +15,13 @@ const emojiBtnList = document.querySelectorAll(".btn-emoji");
 const btnCopyOffer = document.getElementById("btn-copy-offer");
 const btnCopyAnswer = document.getElementById("btn-copy-answer");
 
+// opfs working?
+// navigator.storage.getDirectory().then(root => {
+//   const fileHandle = root.getFileHandle("my first file", {
+//     create: true,
+//   }).then(console.log).catch(console.error);
+// });
+
 // WEBRTC
 const config = {
   iceServers: [{
