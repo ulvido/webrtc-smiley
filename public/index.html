@@ -7,6 +7,20 @@
   <title>WEBRTC Demo</title>
   <link rel="shortcut icon" href="#" />
   <link rel="stylesheet" href="style.css">
+  <script>
+    // service worker registration
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("sw.js")
+          .then(
+            reg => console.log("[Service Worker] Registered ✓", reg),
+            error => console.log("[Service Worker] Registration failed!", error))
+      });
+    } else {
+      console.log("[Service Worker] Service Workers NOT Supported!");
+    }
+  </script>
 </head>
 
 <body>
@@ -43,7 +57,9 @@
     <hr>
     <div id="messages"></div>
   </div>
-  <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <!-- opfs için same origin gerektiğinden adapter.js'yi indirdik. -->
+  <!-- <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script> -->
+  <script src="adapter.js"></script>
   <script src="webrtc.js"></script>
 </body>
 
