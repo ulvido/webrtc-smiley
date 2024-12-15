@@ -134,7 +134,7 @@ const createDataChannel = async () => {
 
       // eğer ana makina ise mesajları forward etsin.
       if (pc?.localDescription?.type === "offer") {
-        const senderRemoteLabel = e?.explicitOriginalTarget?.label;
+        const senderRemoteLabel = e?.currentTarget?.label;
         const senderlocalLabel = dcMap[senderRemoteLabel] || null;
         if (senderlocalLabel) {
           let otherChannels = dcs.filter(dc => dc.label !== senderlocalLabel);
