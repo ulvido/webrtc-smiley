@@ -14,6 +14,8 @@ const messages = document.getElementById("messages");
 const emojiBtnList = document.querySelectorAll(".btn-emoji");
 const btnCopyOffer = document.getElementById("btn-copy-offer");
 const btnCopyAnswer = document.getElementById("btn-copy-answer");
+const loader = document.querySelectorAll(".loader");
+const clear = document.getElementById("clear");
 
 // opfs working?
 // navigator.storage.getDirectory().then(root => {
@@ -27,7 +29,7 @@ const config = {
   iceServers: [{
     urls: [
       "stun:stun.l.google.com:19302",
-      "stun:stun1.l.google.com:19302",
+      // "stun:stun1.l.google.com:19302",
       // "stun:stun2.l.google.com:19302",
       // "stun:stun3.l.google.com:19302",
       // "stun:stun4.l.google.com:19302",
@@ -43,8 +45,12 @@ let dcMap = {};  // datachannel maps local label : remote label
 const createPeerConnection = config => {
   pc = new RTCPeerConnection(config);
 
+  pc.addEventListener("negotiationneeded", e => {
+    console.log("NEGOTIATION NEEDED!", e);
+  });
+
   pc.addEventListener("connectionstatechange", e => {
-    console.log("CONNECTION STATE CHANGED TO: ", pc.connectionState)
+    console.log("CONNECTION STATE CHANGED TO: ", pc.connectionState);
   });
 
   pc.addEventListener("signalingstatechange", e => {
@@ -54,17 +60,45 @@ const createPeerConnection = config => {
   });
 
   pc.addEventListener("icecandidate", e => {
-    console.log("ICE Candidate Detected!")
-    console.log(e.candidate)
+    console.log("ICE Candidate Detected!");
+    console.log(e.candidate);
     if (e.candidate) {
       if (pc?.localDescription?.type === "offer" && !pc.remoteDescription) return; // remote description yok erroru olmasın diye
-      console.log("+ICE Candidate Added.")
+      console.log("+ICE Candidate Added.");
       pc.addIceCandidate(e.candidate);
+
+      // complete beklemeden bi yandan bulduğunu eklesin textareaya eklesin.
+      if (pc?.localDescription?.type === "offer") {
+        offerSdpArea.value = JSON.stringify(pc.localDescription);
+      } else {
+        answerSdpArea.value = JSON.stringify(pc.localDescription);
+      }
     }
-    if (pc?.localDescription?.type === "offer") {
-      offerSdpArea.value = JSON.stringify(pc.localDescription);
-    } else {
-      answerSdpArea.value = JSON.stringify(pc.localDescription);
+  });
+
+  pc.addEventListener("icegatheringstatechange", e => {
+    let connection = e.target;
+
+    switch (connection.iceGatheringState) {
+      case "gathering":
+        /* collection of candidates has begun */
+        console.log("GATHERING ICE CANDIDATES...");
+        loader.forEach(el => el.style.display = "grid");
+        btnCopyOffer.style.display = "none";
+        btnCopyAnswer.style.display = "none";
+        break;
+      case "complete":
+        console.log("GATHERING ICE CANDIDATES COMPLETED!");
+        loader.forEach(el => el.style.display = "none");
+        btnCopyOffer.style.display = "block";
+        btnCopyAnswer.style.display = "block";
+        /* collection of candidates is finished */
+        if (pc?.localDescription?.type === "offer") {
+          offerSdpArea.value = JSON.stringify(pc.localDescription);
+        } else {
+          answerSdpArea.value = JSON.stringify(pc.localDescription);
+        }
+        break;
     }
   });
 
@@ -175,6 +209,7 @@ datachannelBtn.addEventListener("click", e => {
 callBtn.addEventListener("click", e => {
   createOffer();
 })
+
 answerBtn.addEventListener("click", e => {
   if (!offerSdpArea.value.trim()) {
     alert("offer alanı boş");
@@ -182,6 +217,7 @@ answerBtn.addEventListener("click", e => {
   }
   createAnswer(offerSdpArea.value.trim());
 })
+
 acceptBtn.addEventListener("click", e => {
   if (!offerSdpArea.value.trim() && !answerSdpArea.value.trim()) {
     alert("offer veya answer alanı boş olamaz");
@@ -189,26 +225,50 @@ acceptBtn.addEventListener("click", e => {
   }
   acceptAnswer(answerSdpArea.value.trim());
 })
+
 btnCopyOffer.addEventListener("click", e => {
   offerSdpArea.select();
   offerSdpArea.setSelectionRange(0, 99999); // For mobile devices
   navigator.clipboard.writeText(offerSdpArea.value);
 })
+
 btnCopyAnswer.addEventListener("click", e => {
   answerSdpArea.select();
   answerSdpArea.setSelectionRange(0, 99999); // For mobile devices
   navigator.clipboard.writeText(answerSdpArea.value);
 })
+
+clear.addEventListener("click", e => {
+  messages.innerText = "";
+})
+
 emojiBtnList.forEach(btn => {
   btn.addEventListener("click", e => {
     messages.innerText += e.target.value;
     window.scrollTo(0, document.body.scrollHeight);
-    console.log("dcs", dcs);
+    // console.log("dcs", dcs);
     for (let i = 0; i < dcs.length; i++) {
       dcs[i].send(e.target.value)
     }
-    // dcs.forEach(dc => {
-    //   dc.send(e.target.value)
-    // })
   })
 })
+
+
+// rakamlarla emoji gönderebilsin: 1-6 tuşları
+const emojis = ["👋", "👍🏻", "🔥", "😎", "🧿", "🙋🏻‍♂️"]
+addEventListener("keydown", (e) => {
+  // console.log(e.code)
+  // console.log(e.key)
+  // console.log(typeof e.key)
+  if ((e.key >= "1" && e.key <= "6") && (pc?.connectionState === "connected")) {
+    e.preventDefault();
+    let emoji = emojis[(parseInt(e.key) - 1)];
+    messages.innerText += emoji;
+    window.scrollTo(0, document.body.scrollHeight);
+    // console.log("dcs", dcs);
+    for (let i = 0; i < dcs.length; i++) {
+      dcs[i].send(emoji)
+    }
+  }
+  return;
+});

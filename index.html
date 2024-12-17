@@ -36,17 +36,20 @@
     <input type="button" id="btncall" value="CALL">
     <div class="area-wrapper">
       <input type="button" class="copy-btn" id="btn-copy-offer" value="KOPYALA">
+      <div class="loader"></div>
       <textarea placeholder="paste offer" name="offer" id="sdp-offer" rows="4"></textarea>
     </div>
     <input type="button" id="btnanswer" value="ANSWER">
     <div class="area-wrapper">
       <input type="button" class="copy-btn" id="btn-copy-answer" value="KOPYALA">
+      <div class="loader"></div>
       <textarea placeholder="paste answer" name="answer" id="sdp-answer" rows="4"></textarea>
     </div>
     <input type="button" id="btnaccept" value="ACCEPT">
   </div>
   <div class="msg-wrapper">
     <h5>DATACHANNEL: <span id="datachannel-label"></span></h5>
+    <p>Göndermek için emojilere tıkla veya 1-6 tuşlarına bas. <a href="#" id="clear">Clear</a></p>
     <div class="emoji-wrapper">
       <input type="button" class="btn-emoji" value="👋">
       <input type="button" class="btn-emoji" value="👍🏻">
