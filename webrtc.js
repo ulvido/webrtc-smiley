@@ -24,6 +24,44 @@ const clear = document.getElementById("clear");
 //   }).then(console.log).catch(console.error);
 // });
 
+// WORKER
+const demoWorker = new Worker("worker/demo.js");
+demoWorker.addEventListener("message", e => {
+  console.log("[MAIN]", e.data)
+})
+demoWorker.postMessage("naber worker");
+
+// I - BROADCAST
+// dikkat herkese gönderiyor. 
+// yeni tab açsan bile eski taba da gönderiyor.
+// const broadcast = new BroadcastChannel('channel-123');
+// broadcast.postMessage("[BROADCAST MAIN] ya ya ye");
+// broadcast.addEventListener("message", e => {
+//   console.log(e.data)
+//   console.log("[BROADCAST MAIN] ya ya ye")
+// })
+
+
+// III - MESSAGE CHANNEL
+const messageChannel = new MessageChannel();
+
+messageChannel.port1.addEventListener("message", e => {
+  console.log("[MAIN] port mesajı geldi. burası main", e);
+})
+
+navigator.serviceWorker.ready.then((registration) => {
+  registration.active.postMessage(
+    "[MAIN] service workera mesaj gönderdim", [messageChannel.port2]
+  );
+
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    // event is a MessageEvent object
+    console.log(`The service worker sent me a message: ${event.data}`);
+  });
+});
+
+
+
 // WEBRTC
 const config = {
   iceServers: [{
