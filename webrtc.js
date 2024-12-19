@@ -32,7 +32,10 @@ demoWorker.addEventListener("message", e => {
 demoWorker.postMessage("naber worker");
 
 // SHARED WORKER
-const sharedWorker = new SharedWorker("worker/shared.js");
+const sharedWorker = new SharedWorker("worker/shared.js", {
+  name: "test-shared-worker",
+  credentials: "include",
+});
 sharedWorker.port.start();
 sharedWorker.port.addEventListener("message", e => {
   console.log("[MAIN SHARED WORKER]", e.data)
