@@ -1,0 +1,36 @@
+{
+  "background_color": "#0392cf",
+  "theme_color": "#0392cf",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "tr-TR",
+  "dir": "ltr",
+  "categories": [
+    "collabration",
+    "business",
+    "shopping"
+  ],
+  "icons": [
+    {
+      "src": "webrtc.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "webrtc.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "webrtc.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "name": "Ek bir app",
+  "short_name": "deneme appı",
+  "description": "ana appa ek çalışan bir applet",
+  "start_url": "index.html?launcher=true"
+}

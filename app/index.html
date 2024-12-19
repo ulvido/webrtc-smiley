@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applet</title>
+  <link rel="shortcut icon" href="#" />
+  <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // service worker 2 registration
+    if ("serviceWorker" in navigator) {
+      // window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("app/sw2.js")
+        .then(
+          reg => console.log("[SW2] Registered ✓"/*, reg*/),
+          error => console.log("[SW2] Registration failed!", error))
+        .catch(console.error);
+      // });
+    } else {
+      console.log("[SW2] Service Workers NOT Supported!");
+    }
+  </script>
+</head>
+
+<body>
+  <h1>APPLET</h1>
+  <a href="/">Anasayfa</a>
+  <button onclick="history.back()">History back</button>
+</body>
+
+</html>

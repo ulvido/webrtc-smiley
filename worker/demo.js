@@ -1,3 +1,13 @@
+// BROADCAST
+// dikkat herkese gönderiyor. 
+// yeni tab açsan bile eski taba da gönderiyor.
+const broadcast = new BroadcastChannel('channel-123');
+broadcast.postMessage("[BROADCAST WORKER] dan selamlar");
+broadcast.addEventListener("message", e => {
+  console.log("[BROADCAST WORKER] mekanına düştün", e.data)
+})
+
+
 self.addEventListener("message", e => {
   console.log("[WORKER]", e.data);
   postMessage("iyidir sağol");

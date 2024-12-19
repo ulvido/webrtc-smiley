@@ -48,8 +48,7 @@ sharedWorker.port.postMessage("naber shared worker");
 // const broadcast = new BroadcastChannel('channel-123');
 // broadcast.postMessage("[BROADCAST MAIN] ya ya ye");
 // broadcast.addEventListener("message", e => {
-//   console.log(e.data)
-//   console.log("[BROADCAST MAIN] ya ya ye")
+//   console.log("[BROADCAST MAIN] e düştün", e.data)
 // })
 
 

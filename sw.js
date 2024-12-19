@@ -16,12 +16,11 @@ try {
   // I - BROADCAST
   // dikkat herkese gönderiyor. 
   // yeni tab açsan bile eski taba da gönderiyor.
-  // const broadcast = new BroadcastChannel('channel-123');
-  // broadcast.postMessage("[BROADCAST SW] everybody says that:");
-  // broadcast.addEventListener("message", e => {
-  //   console.log(e.data)
-  //   broadcast.postMessage("[BROADCAST SW] coco jambo");
-  // })
+  const broadcast = new BroadcastChannel('channel-123');
+  broadcast.postMessage("[BROADCAST SW] den selamlar");
+  broadcast.addEventListener("message", e => {
+    console.log("[BORADCAST SW] mekanına düştün", e.data);
+  })
 
   // II - CLIENT API
   self.addEventListener("message", e => {
