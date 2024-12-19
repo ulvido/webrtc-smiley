@@ -27,9 +27,17 @@ const clear = document.getElementById("clear");
 // WORKER
 const demoWorker = new Worker("worker/demo.js");
 demoWorker.addEventListener("message", e => {
-  console.log("[MAIN]", e.data)
+  console.log("[MAIN WORKER]", e.data)
 })
 demoWorker.postMessage("naber worker");
+
+// SHARED WORKER
+const sharedWorker = new SharedWorker("worker/shared.js");
+sharedWorker.port.start();
+sharedWorker.port.addEventListener("message", e => {
+  console.log("[MAIN SHARED WORKER]", e.data)
+})
+sharedWorker.port.postMessage("naber shared worker");
 
 // I - BROADCAST
 // dikkat herkese gönderiyor. 
@@ -42,6 +50,8 @@ demoWorker.postMessage("naber worker");
 // })
 
 
+
+
 // III - MESSAGE CHANNEL
 const messageChannel = new MessageChannel();
 
@@ -50,8 +60,9 @@ messageChannel.port1.addEventListener("message", e => {
 })
 
 navigator.serviceWorker.ready.then((registration) => {
+
   registration.active.postMessage(
-    "[MAIN] service workera mesaj gönderdim", [messageChannel.port2]
+    "[MAIN] service workera mesaj gönderdim", [sharedWorker.port]
   );
 
   navigator.serviceWorker.addEventListener("message", (event) => {

@@ -3,17 +3,15 @@
 try {
   // sw - is intalled
   self.addEventListener("install", e => {
-    console.log("Service Worker Installed.");
+    console.log("[SW] Installed.");
   });
 
   // sw - is activated
   self.addEventListener("activate", e => {
-    console.log("Service Worker Activated.");
+    console.log("[SW] Activated.");
   });
 
   // activateBGServices();
-
-  console.log("Service Worker aaaaa.");
 
   // I - BROADCAST
   // dikkat herkese gönderiyor. 
@@ -28,19 +26,43 @@ try {
   // II - CLIENT API
   self.addEventListener("message", e => {
     console.log("[SW] sw mesaj geldi. swdeki abonelik", e);
+    // shared workerla iletişim
+    e.ports[0]?.addEventListener("message", e => {
+      console.log("[SW] shared workerdan geldi")
+    })
+    e.ports[0]?.postMessage("servisten shareda")
+    // to the tab
     e.source.postMessage("Hi client");
-    self.clients.matchAll({ includeUncontrolled: true, type: "window" }).then(clients => {
-      if (clients && clients.length) {
-        //Respond to last focused tab
-        clients[0].postMessage("hülooo from sw");
-      }
-    });
+    // to all window clients
+    self.clients
+      .matchAll({ includeUncontrolled: true, type: "window" })
+      .then(clients => {
+        console.log("CLIENTS", clients);
+        if (clients && clients.length) {
+          //Respond to last focused tab
+          clients.forEach(client => {
+            client.postMessage("[SW] to all clients");
+          });
+        }
+      });
+    // to worker clients
+    self.clients
+      .matchAll({ includeUncontrolled: true, type: "worker" })
+      .then(workers => {
+        console.log("WORKERS", workers);
+        if (workers && workers.length) {
+          //Respond to last focused tab
+          workers.forEach(worker => {
+            worker.postMessage("[SW] to workers"); // çalışmıyor
+          });
+        }
+      });
 
     // III - MESSAGE CHANNEL
-    e.ports[0].postMessage("port hülooo from sw");
-    e.ports[0].addEventListener("message", e => {
-      console.log("[SW] port mesajı dinleme.", e)
-    })
+    // e.ports[0].postMessage("port hülooo from sw");
+    // e.ports[0].addEventListener("message", e => {
+    //   console.log("[SW] port mesajı dinleme.", e)
+    // })
   });
 
 

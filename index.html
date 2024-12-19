@@ -15,11 +15,12 @@
         navigator.serviceWorker
           .register("sw.js")
           .then(
-            reg => console.log("[Service Worker] Registered ✓", reg),
-            error => console.log("[Service Worker] Registration failed!", error))
+            reg => console.log("[SW] Registered ✓"/*, reg*/),
+            error => console.log("[SW] Registration failed!", error))
+          .catch(console.error);
       });
     } else {
-      console.log("[Service Worker] Service Workers NOT Supported!");
+      console.log("[SW] Service Workers NOT Supported!");
     }
   </script>
 </head>
