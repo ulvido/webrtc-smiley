@@ -24,6 +24,25 @@ const clear = document.getElementById("clear");
 //   }).then(console.log).catch(console.error);
 // });
 
+// COMLINK WORKER
+// bu kütüphane çok küçük -> 5kb falan.
+// workerda tanımladığın bir API'nin
+// promise olarak mainden çağırılabilmesini sağlıyor.
+import * as Comlink from "../lib/comlink/comlink@4.4.2.min.js";
+async function init() {
+  const worker = new SharedWorker("worker/comlink-demo.js", { type: "module" });
+  /**
+   * SharedWorkers communicate via the `postMessage` function in their `port` property.
+   * Therefore you must use the SharedWorker's `port` property when calling `Comlink.wrap`.
+   */
+  const obj = Comlink.wrap(worker.port); // illa workerla aynı olsun diye obj koymak zorunda değilsin. 
+  console.log(`[COMLINK] Counter now (about to increment): ${await obj.counter}`);
+  await obj.inc();
+  console.log(`[COMLINK] Counter: ${await obj.counter}`);
+}
+init();
+
+
 // WORKER
 const demoWorker = new Worker("worker/demo.js");
 demoWorker.addEventListener("message", e => {
