@@ -74,23 +74,23 @@ sharedWorker.port.postMessage("naber shared worker");
 
 
 // III - MESSAGE CHANNEL
-const messageChannel = new MessageChannel();
+// const messageChannel = new MessageChannel();
 
-messageChannel.port1.addEventListener("message", e => {
-  console.log("[MAIN] port mesajı geldi. burası main", e);
-})
+// messageChannel.port1.addEventListener("message", e => {
+//   console.log("[MAIN] port mesajı geldi. burası main", e);
+// })
 
-navigator.serviceWorker.ready.then((registration) => {
+// navigator.serviceWorker.ready.then((registration) => {
 
-  registration.active.postMessage(
-    "[MAIN] service workera mesaj gönderdim", [sharedWorker.port]
-  );
+//   registration.active.postMessage(
+//     "[MAIN] service workera mesaj gönderdim", [sharedWorker.port]
+//   );
 
-  navigator.serviceWorker.addEventListener("message", (event) => {
-    // event is a MessageEvent object
-    console.log(`The service worker sent me a message: ${event.data}`);
-  });
-});
+//   navigator.serviceWorker.addEventListener("message", (event) => {
+//     // event is a MessageEvent object
+//     console.log(`The service worker sent me a message: ${event.data}`);
+//   });
+// });
 
 
 
