@@ -24,6 +24,19 @@ const clear = document.getElementById("clear");
 //   }).then(console.log).catch(console.error);
 // });
 
+// Message from Service Worker
+navigator.serviceWorker.addEventListener("message", event => {
+  console.log("FROM SW Genel Mesaj: ", event.data);
+})
+
+// document.addEventListener("click", event => {
+//   navigator.serviceWorker.ready.then((registration) => {
+//     registration.active.postMessage(
+//       { type: "GREET", playload: { msg: "nabersin?" } }
+//     );
+//   });
+// })
+
 // COMLINK WORKER
 // bu kütüphane çok küçük -> 5kb falan.
 // workerda tanımladığın bir API'nin
