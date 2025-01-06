@@ -12,25 +12,25 @@
   ],
   "icons": [
     {
-      "src": "webrtc.png",
+      "src": "img/webrtc.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
   "screenshots": [
     {
-      "src": "webrtc.png",
+      "src": "img/webrtc.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "webrtc.png",
+      "src": "img/webrtc.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
   "name": "WEBRTC Test",
   "short_name": "WEBRTC Test",
-  "description": "webrtc bağlantısı testi",
+  "description": "img/webrtc bağlantısı testi",
   "start_url": "index.html?launcher=true"
 }

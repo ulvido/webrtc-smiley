@@ -25,7 +25,7 @@ const clear = document.getElementById("clear");
 // });
 
 // Message from Service Worker
-navigator.serviceWorker.addEventListener("message", event => {
+navigator?.serviceWorker?.addEventListener("message", event => {
   console.log("FROM SW Genel Mesaj: ", event.data);
 })
 
