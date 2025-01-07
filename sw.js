@@ -1,3 +1,8 @@
+/**
+ * SERVICE WORKER
+ * high level bir locationda bulunması gerekiyor.
+ */
+
 // import { activateBGServices } from "./services.js";
 
 try {
