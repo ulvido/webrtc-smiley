@@ -24,18 +24,25 @@ const clear = document.getElementById("clear");
 //   }).then(console.log).catch(console.error);
 // });
 
+
+// Origin Private File System
+import { createFileListWrapper } from "./opfs.js";
+document.addEventListener("DOMContentLoaded", e => {
+  createFileListWrapper({ id: "opfs-local", title: "LOCAL" });
+});
+
 // Message from Service Worker
 navigator?.serviceWorker?.addEventListener("message", event => {
   console.log("FROM SW Genel Mesaj: ", event.data);
 })
 
-document.addEventListener("click", event => {
-  navigator.serviceWorker.ready.then((registration) => {
-    registration.active.postMessage(
-      { type: "GREET", playload: { msg: "nabersin?" } }
-    );
-  });
-})
+// document.addEventListener("click", event => {
+//   navigator.serviceWorker.ready.then((registration) => {
+//     registration.active.postMessage(
+//       { type: "GREET", playload: { msg: "nabersin?" } }
+//     );
+//   });
+// })
 
 // COMLINK WORKER
 // bu kütüphane çok küçük -> 5kb falan.
@@ -349,6 +356,7 @@ addEventListener("keydown", (e) => {
     messages.innerText += emoji;
     window.scrollTo(0, document.body.scrollHeight);
     // console.log("dcs", dcs);
+    // console.log("dcMap", dcMap);
     for (let i = 0; i < dcs.length; i++) {
       dcs[i].send(emoji)
     }
