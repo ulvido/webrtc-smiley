@@ -20,7 +20,12 @@ worker.addEventListener("message", e => {
       break;
 
     case "FILE_FROM_OPFS":
-      opfsFiles[e.data.payload.filename] = e.data.payload;
+      // opfsFiles[e.data.payload.filename] = e.data.payload;
+      // createFileViews({ id: "opfs-local", files: opfsFiles })
+      break;
+
+    case "ALL_FILES_FROM_OPFS_DONE":
+      opfsFiles = e.data.payload.allFiles;
       createFileViews({ id: "opfs-local", files: opfsFiles })
       break;
 
@@ -76,6 +81,10 @@ export const refreshList = () => {
   let ul = document.getElementById("opfs-local");
   // TODO clear btn events (memory leak?)
   ul.innerHTML = "";
+  // clear memory
+  if (0 < Object.keys(opfsFiles).length) {
+    Object.values(opfsFiles).map(({ url }) => URL.revokeObjectURL(url));
+  };
   worker.postMessage({ type: "LIST_FILES" })
 }
 

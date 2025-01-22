@@ -3,31 +3,31 @@ const opfsRoot = await navigator.storage.getDirectory();
 self.postMessage({ type: "WORKER_READY" })
 
 // to clear blobs (prevent memory leaks)
-let createdBlobUrls = [];
+// and send file list
 
 self.addEventListener("message", e => {
   console.log("workera mesaj geldi", e.data);
   switch (e.data.type) {
 
     case "LIST_FILES":
-      // clear memory
-      if (0 < createdBlobUrls.length) {
-        createdBlobUrls.map(url => URL.revokeObjectURL(url));
-        createdBlobUrls = [];
-      };
       // get files from opfs
       navigator.storage.getDirectory()
         .then(async directoryHandle => {
           const entries = directoryHandle.values();
           // console.log(entries)
+          let allFiles = {};
           for await (const entry of entries) {
             // console.log(entry);
             const existingFileHandle = await opfsRoot.getFileHandle(entry.name);
             const file = await existingFileHandle.getFile();
             const url = URL.createObjectURL(file);
-            createdBlobUrls.push(url);
+            allFiles[entry.name] = { filename: entry.name, url };
             postMessage({ type: "FILE_FROM_OPFS", payload: { filename: entry.name, url } });
           }
+          return allFiles;
+        })
+        .then((allFiles) => {
+          postMessage({ type: "ALL_FILES_FROM_OPFS_DONE", payload: { allFiles } });
         });
       return;
 
