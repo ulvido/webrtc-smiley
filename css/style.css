@@ -126,3 +126,10 @@ input[type="button"] {
 		transform: rotate(0.5turn);
 	}
 }
+
+.files-wrapper {
+	background: dimgray;
+	border-radius: 8px;
+	padding: 20px;
+	margin-top: 10px;
+}

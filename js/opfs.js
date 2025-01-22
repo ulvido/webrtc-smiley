@@ -1,3 +1,19 @@
+// BROADCAST CHANNEL
+const broadcast = new BroadcastChannel("opfs");
+broadcast.addEventListener("message", e => {
+  const { type, payload } = e.data;
+  switch (type) {
+    case "FILES_REFRESHED":
+      for (let i = 0; i < dcs.length; i++) {
+        dcs[i].send(JSON.stringify({ type: "REMOTE_FILES_REFRESHED", payload }));
+      }
+      break;
+
+    default:
+      break;
+  }
+})
+
 // ELEMENTS
 const filesWrapper = document.querySelector(".files-wrapper");
 const inputFile = document.getElementById("input-file");
@@ -16,7 +32,7 @@ worker.addEventListener("message", e => {
     case "FILE_SAVED":
     case "FILE_DELETED":
       // refresh file list
-      refreshList();
+      refreshLocalList();
       break;
 
     case "FILE_FROM_OPFS":
@@ -24,9 +40,11 @@ worker.addEventListener("message", e => {
       // createFileViews({ id: "opfs-local", files: opfsFiles })
       break;
 
-    case "ALL_FILES_FROM_OPFS_DONE":
+    case "LIST_FILES_DONE":
       opfsFiles = e.data.payload.allFiles;
-      createFileViews({ id: "opfs-local", files: opfsFiles })
+      createFileViews({ id: "opfs-local", files: opfsFiles });
+      // for sending files to remote channels, make them refresh themselves
+      broadcast.postMessage(JSON.stringify({ type: "FILES_REFRESHED", payload: { opfsFiles } }));
       break;
 
     default:
@@ -43,8 +61,8 @@ export const hideFiles = () => {
   filesWrapper.style.display = "none"
 }
 
-export const createFileListWrapper = (options = { id: "opfs-local", title: "LOCAL" }) => {
-  let { id, title } = options;
+export const createFileListWrapper = (options = { id: "opfs-local", title: "LOCAL", onRefreshClicked: refreshLocalList }) => {
+  let { id, title, onRefreshClicked } = options;
   let div = document.createElement("div");
   // title part wrapper (title + refresh button)
   let divTitle = document.createElement("div");
@@ -63,7 +81,7 @@ export const createFileListWrapper = (options = { id: "opfs-local", title: "LOCA
   btn.style.width = "64px";
   btn.style.padding = "4px";
   btn.style.fontSize = "9px";
-  btn.addEventListener("click", refreshList);
+  btn.addEventListener("click", onRefreshClicked);
   divTitle.appendChild(btn);
   // create list holder
   let ul = document.createElement("ul");
@@ -76,7 +94,7 @@ export const createFileListWrapper = (options = { id: "opfs-local", title: "LOCA
   filesArea.append(div);
 }
 
-export const refreshList = () => {
+export const refreshLocalList = () => {
   // clear
   let ul = document.getElementById("opfs-local");
   // TODO clear btn events (memory leak?)

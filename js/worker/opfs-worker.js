@@ -27,7 +27,7 @@ self.addEventListener("message", e => {
           return allFiles;
         })
         .then((allFiles) => {
-          postMessage({ type: "ALL_FILES_FROM_OPFS_DONE", payload: { allFiles } });
+          postMessage({ type: "LIST_FILES_DONE", payload: { allFiles } });
         });
       return;
 

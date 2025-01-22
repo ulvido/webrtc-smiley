@@ -26,10 +26,64 @@ const clear = document.getElementById("clear");
 
 
 // Origin Private File System
-import { createFileListWrapper } from "./opfs.js";
+import { createFileListWrapper, refreshLocalList } from "./opfs.js";
 document.addEventListener("DOMContentLoaded", e => {
-  createFileListWrapper({ id: "opfs-local", title: "LOCAL" });
+  createFileListWrapper({ id: "opfs-local", title: "LOCAL", onRefreshClicked: refreshLocalList });
 });
+
+
+export const createRemoteFileViews = (options = { id: "opfs-remote", files, channelLabel }) => {
+  let { id, files, channelLabel } = options;
+  // clear
+  let ul = document.getElementById(id);
+  // TODO clear btn events (memory leak?)
+  ul.innerHTML = "";
+  // populate
+  Object.values(files).forEach(item => {
+    let li = document.createElement("li");
+    li.style.marginBottom = "8px";
+    // filename text
+    let span = document.createElement("span");
+    span.innerHTML = item.filename;
+    li.appendChild(span)
+    // download
+    let a = document.createElement("a");
+    // a.href = item.url;
+    // a.download = item.filename;
+    let btn = document.createElement("input");
+    btn.type = "button";
+    btn.value = "İndir"
+    btn.title = "Remote OPFS'den bilgisayarına indir"
+    btn.addEventListener("click", () => {
+      dcs
+        .filter(dc => dc.label === channelLabel)[0]
+        .send(JSON.stringify({ type: "DOWNLOAD_REQUESTED", payload: { url: item.url } }));
+    })
+    btn.style.marginLeft = "10px";
+    btn.style.width = "64px";
+    a.appendChild(btn);
+    li.appendChild(a)
+    // link to file
+    a = document.createElement("a");
+    // a.href = item.url;
+    a.target = "_blank";
+    btn = document.createElement("input");
+    btn.type = "button";
+    btn.value = "Göster"
+    btn.title = "Remote OPFS'den göster"
+    btn.addEventListener("click", () => {
+      dcs
+        .filter(dc => dc.label === channelLabel)[0]
+        .send(JSON.stringify({ type: "VIEW_REQUESTED", payload: { url: item.url } }));
+    })
+    btn.style.marginLeft = "10px";
+    btn.style.width = "64px";
+    a.appendChild(btn);
+    li.appendChild(a)
+
+    ul.appendChild(li);
+  })
+}
 
 // Message from Service Worker
 navigator?.serviceWorker?.addEventListener("message", event => {
@@ -84,11 +138,32 @@ sharedWorker.port.postMessage("naber shared worker");
 // I - BROADCAST
 // dikkat herkese gönderiyor. 
 // yeni tab açsan bile eski taba da gönderiyor.
-// const broadcast = new BroadcastChannel('channel-123');
+// const broadcast = new BroadcastChannel("channel-123");
 // broadcast.postMessage("[BROADCAST MAIN] ya ya ye");
 // broadcast.addEventListener("message", e => {
 //   console.log("[BROADCAST MAIN] e düştün", e.data)
 // })
+const broadcast = new BroadcastChannel("opfs");
+broadcast.addEventListener("message", e => {
+  const { type, payload } = JSON.parse(e.data);
+  switch (type) {
+    case "FILES_REFRESHED":
+      for (let i = 0; i < dcs.length; i++) {
+        dcs[i].send(JSON.stringify({ type: "REMOTE_FILES_REFRESHED", payload }));
+      }
+      break;
+
+    default:
+      break;
+  }
+})
+
+// remote'un refresh butonuna tıklandığında
+const refreshRemoteList = (channelLabel) => () => {
+  dcs
+    .filter(dc => dc.label === channelLabel)[0]
+    .send(JSON.stringify({ type: "REFRESH_REQUESTED_FROM_REMOTE", payload: {} }));
+}
 
 
 
@@ -243,6 +318,12 @@ const createDataChannel = async () => {
       cancelBtn.style.display = "none";
       datachannelBtn.style.display = "none";
       connectionWrapper.style.display = "none";
+      createFileListWrapper({
+        id: `opfs-remote-${channel.label}`,
+        title: `REMOTE [${channel.label}]`,
+        onRefreshClicked: refreshRemoteList(label),
+      })
+      refreshRemoteList(label)();
     });
 
     channel.addEventListener("close", event => {
@@ -253,10 +334,55 @@ const createDataChannel = async () => {
     channel.addEventListener("message", e => {
       console.log("received e:", e);
       console.log("received:", e.data);
-      messages.innerText += e.data;
-      window.scrollTo(0, document.body.scrollHeight);
+      const { type, payload } = JSON.parse(e.data);
 
-      // eğer ana makina ise mesajları forward etsin.
+      switch (type) {
+        case "EMOJI":
+          messages.innerText += payload.text;
+          window.scrollTo(0, document.body.scrollHeight);
+          break;
+        case "REMOTE_FILES_REFRESHED":
+          console.log({ payload }, e.currentTarget.label);
+          createRemoteFileViews({
+            id: "opfs-remote-" + e.currentTarget.label,
+            files: payload.opfsFiles,
+            channelLabel: label,
+          });
+          break;
+        case "REFRESH_REQUESTED_FROM_REMOTE":
+          refreshLocalList();
+          break;
+        case "DOWNLOAD_REQUESTED":
+          // download button clicked from a REMOTE listed file
+          // TODO: fetch file from local and send to remote as response
+          fetch(payload.url)
+            .then(f => f.blob())
+            .then(blob => {
+              e.target.send(JSON.stringify({ type: "DOWNLOAD_COMPLETED", payload: { /*filename: payload.filename,*/ file: blob } }))
+            })
+          break;
+        case "DOWNLOAD_COMPLETED":
+          // incoming file from remote peer
+          //TODO: file received from remote peer. make it download
+          // const file = new File([payload.file], payload.filename, {
+          //   type: payload.file.type,
+          // });
+          break;
+        case "VIEW_REQUESTED":
+          // view button clicked from a REMOTE listed file
+          // TODO: fetch file from local and send to remote as response
+          break;
+        case "VIEW_COMPLETED":
+          //TODO: file received from remote peer. view it
+          let url = URL.createObjectURL(payload.file);
+          window.open(url);
+          break;
+
+        default:
+          break;
+      }
+
+      // eğer ana makina ise mesajları diğer makinalara forward etsin.
       if (pc?.localDescription?.type === "offer") {
         const senderRemoteLabel = e?.currentTarget?.label;
         const senderlocalLabel = dcMap[senderRemoteLabel] || null;
@@ -332,13 +458,14 @@ clear.addEventListener("click", e => {
   messages.innerText = "";
 })
 
+// emojilere tıklayıp emoji gönderebilsin
 emojiBtnList.forEach(btn => {
   btn.addEventListener("click", e => {
     messages.innerText += e.target.value;
     window.scrollTo(0, document.body.scrollHeight);
     // console.log("dcs", dcs);
     for (let i = 0; i < dcs.length; i++) {
-      dcs[i].send(e.target.value)
+      dcs[i].send(JSON.stringify({ type: "EMOJI", payload: { text: e.target.value } }));
     }
   })
 })
@@ -355,10 +482,10 @@ addEventListener("keydown", (e) => {
     let emoji = emojis[(parseInt(e.key) - 1)];
     messages.innerText += emoji;
     window.scrollTo(0, document.body.scrollHeight);
-    // console.log("dcs", dcs);
+    console.log("dcs", dcs);
     // console.log("dcMap", dcMap);
     for (let i = 0; i < dcs.length; i++) {
-      dcs[i].send(emoji)
+      dcs[i].send(JSON.stringify({ type: "EMOJI", payload: { text: emoji } }))
     }
   }
   return;
