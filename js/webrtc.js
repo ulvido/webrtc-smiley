@@ -55,9 +55,10 @@ export const createRemoteFileViews = (options = { id: "opfs-remote", files, chan
     btn.value = "İndir"
     btn.title = "Remote OPFS'den bilgisayarına indir"
     btn.addEventListener("click", () => {
+      downloadBuffer = []; // reset buffer - birisi bitmeden diğerine tıkladıysa diye
       dcs
         .filter(dc => dc.label === channelLabel)[0]
-        .send(JSON.stringify({ type: "DOWNLOAD_REQUESTED", payload: { url: item.url } }));
+        .send(JSON.stringify({ type: "DOWNLOAD_REQUESTED", payload: { filename: item.filename, url: item.url } }));
     })
     btn.style.marginLeft = "10px";
     btn.style.width = "64px";
@@ -72,9 +73,10 @@ export const createRemoteFileViews = (options = { id: "opfs-remote", files, chan
     btn.value = "Göster"
     btn.title = "Remote OPFS'den göster"
     btn.addEventListener("click", () => {
+      downloadBuffer = []; // reset buffer - birisi bitmeden diğerine tıkladıysa diye
       dcs
         .filter(dc => dc.label === channelLabel)[0]
-        .send(JSON.stringify({ type: "VIEW_REQUESTED", payload: { url: item.url } }));
+        .send(JSON.stringify({ type: "VIEW_REQUESTED", payload: { filename: item.filename, url: item.url } }));
     })
     btn.style.marginLeft = "10px";
     btn.style.width = "64px";
@@ -206,6 +208,7 @@ const config = {
 let pc; // peer connection
 let dcs = []; // datachannels
 let dcMap = {};  // datachannel maps local label : remote label 
+let downloadBuffer = [];
 
 const createPeerConnection = config => {
   pc = new RTCPeerConnection(config);
@@ -334,7 +337,24 @@ const createDataChannel = async () => {
     channel.addEventListener("message", e => {
       console.log("received e:", e);
       console.log("received:", e.data);
-      const { type, payload } = JSON.parse(e.data);
+
+      let type, payload;
+
+      if (
+        e.data instanceof ArrayBuffer || // blob'u chunk'lara ayırıp gönderdiyse
+        e.data instanceof Blob // veya tek seferde bütün bir blob şeklinde gönderdiyse
+      ) {
+        downloadBuffer.push(e.data) // download yapıyoruz demektir. buffera ekle.
+        return;
+      } else {
+        let parsed = JSON.parse(e.data);
+        type = parsed.type;
+        payload = parsed.payload;
+      }
+
+      // hedef channelı tespit et
+      let localChannelEnd = dcMap[e.target.label];
+      let remoteChannelEnd = dcs.filter(dc => dc.label === localChannelEnd)[0]; // responseları bu channela gönder
 
       switch (type) {
         case "EMOJI":
@@ -354,28 +374,98 @@ const createDataChannel = async () => {
           break;
         case "DOWNLOAD_REQUESTED":
           // download button clicked from a REMOTE listed file
-          // TODO: fetch file from local and send to remote as response
           fetch(payload.url)
             .then(f => f.blob())
             .then(blob => {
-              e.target.send(JSON.stringify({ type: "DOWNLOAD_COMPLETED", payload: { /*filename: payload.filename,*/ file: blob } }))
+              const chunkSize = 16384; // 16Kb for cross browser compatibility
+              let offset = 0;
+              const reader = new FileReader();
+              reader.addEventListener("load", (event) => {
+                remoteChannelEnd.send(event.target.result)
+                offset += event.target.result.byteLength;
+                if (offset < blob.size) {
+                  readSlice(offset);
+                }
+              });
+              reader.addEventListener("loadend", (event) => {
+                console.log("BLOB READ END: ", event.target.result);
+                if (event.target.result) { // if ended
+                  console.log("TARGET: ", e.target);
+                  remoteChannelEnd.send(JSON.stringify({ type: "DOWNLOAD_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
+                }
+                // reader.result contains the contents of blob as a typed array
+              });
+              const readSlice = o => {
+                console.log('readSlice ', o);
+                if (blob.size < chunkSize) { // blob chunktan küçükse zaten parçalamaya gerek yok direk oku
+                  reader.readAsArrayBuffer(blob);
+                } else {
+                  const slice = blob.slice(offset, o + chunkSize); // chunk kadar dilim alıp
+                  reader.readAsArrayBuffer(slice); // o kadarlığını okuyoruz
+                }
+              };
+              readSlice(0);
             })
           break;
         case "DOWNLOAD_COMPLETED":
           // incoming file from remote peer
-          //TODO: file received from remote peer. make it download
-          // const file = new File([payload.file], payload.filename, {
-          //   type: payload.file.type,
-          // });
+          const receivedDownload = new Blob(downloadBuffer, {
+            name: payload.name,
+            type: payload.type,
+            lastModified: payload.lastModified,
+          });
+          downloadBuffer = []; // reset buffer
+          let blobUrlDownload = URL.createObjectURL(receivedDownload);
+          const linkDownload = document.createElement("a");
+          linkDownload.href = blobUrlDownload;
+          linkDownload.download = payload.name;
+          linkDownload.click();
           break;
         case "VIEW_REQUESTED":
           // view button clicked from a REMOTE listed file
-          // TODO: fetch file from local and send to remote as response
+          // TODO burası download ile aynı sadece completed type değişik. refactor later
+          fetch(payload.url)
+            .then(f => f.blob())
+            .then(blob => {
+              const chunkSize = 16384; // 16Kb for cross browser compatibility
+              let offset = 0;
+              const reader = new FileReader();
+              reader.addEventListener("load", (event) => {
+                remoteChannelEnd.send(event.target.result)
+                offset += event.target.result.byteLength;
+                if (offset < blob.size) {
+                  readSlice(offset);
+                }
+              });
+              reader.addEventListener("loadend", (event) => {
+                console.log("BLOB READ END: ", event.target.result);
+                if (event.target.result) { // if ended
+                  console.log("TARGET: ", e.target);
+                  remoteChannelEnd.send(JSON.stringify({ type: "VIEW_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
+                }
+                // reader.result contains the contents of blob as a typed array
+              });
+              const readSlice = o => {
+                console.log('readSlice ', o);
+                const slice = blob.slice(offset, o + chunkSize); // chunk kadar dilim alıp
+                reader.readAsArrayBuffer(slice); // o kadarlığını okuyoruz
+              };
+              readSlice(0);
+            })
           break;
         case "VIEW_COMPLETED":
-          //TODO: file received from remote peer. view it
-          let url = URL.createObjectURL(payload.file);
-          window.open(url);
+          // incoming file from remote peer
+          const receivedView = new Blob(downloadBuffer, {
+            name: payload.name,
+            type: payload.type,
+            lastModified: payload.lastModified,
+          });
+          downloadBuffer = []; // reset buffer
+          let blobUrlView = URL.createObjectURL(receivedView);
+          const linkView = document.createElement("a");
+          linkView.href = blobUrlView;
+          linkView.target = "_blank";
+          linkView.click();
           break;
 
         default:
