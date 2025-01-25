@@ -104,19 +104,19 @@ navigator?.serviceWorker?.addEventListener("message", event => {
 // bu kütüphane çok küçük -> 5kb falan.
 // workerda tanımladığın bir API'nin
 // promise olarak mainden çağırılabilmesini sağlıyor.
-// import * as Comlink from "/js/lib/comlink/comlink@4.4.2.min.js";
-// async function init() {
-//   const worker = new SharedWorker("/js/worker/comlink-demo.js", { type: "module" });
-//   /**
-//    * SharedWorkers communicate via the `postMessage` function in their `port` property.
-//    * Therefore you must use the SharedWorker's `port` property when calling `Comlink.wrap`.
-//    */
-//   const obj = Comlink.wrap(worker.port); // illa workerla aynı olsun diye obj koymak zorunda değilsin. 
-//   console.log(`[COMLINK] Counter now (about to increment): ${await obj.counter}`);
-//   await obj.inc();
-//   console.log(`[COMLINK] Counter: ${await obj.counter}`);
-// }
-// init();
+import * as Comlink from "/js/lib/comlink/comlink@4.4.2.min.js";
+async function init() {
+  const worker = new SharedWorker("/js/worker/comlink-demo.js", { type: "module" });
+  /**
+   * SharedWorkers communicate via the `postMessage` function in their `port` property.
+   * Therefore you must use the SharedWorker's `port` property when calling `Comlink.wrap`.
+   */
+  const obj = Comlink.wrap(worker.port); // illa workerla aynı olsun diye obj koymak zorunda değilsin. 
+  console.log(`[COMLINK] Counter now (about to increment): ${await obj.counter}`);
+  await obj.inc();
+  console.log(`[COMLINK] Counter: ${await obj.counter}`);
+}
+init();
 
 
 // WORKER
