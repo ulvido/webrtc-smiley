@@ -338,23 +338,23 @@ const createDataChannel = async () => {
       console.log("received e:", e);
       console.log("received:", e.data);
 
+      // hedef channelı tespit et
+      let localChannelEnd = dcMap[e.target.label];
+      let remoteChannelEnd = dcs.filter(dc => dc.label === localChannelEnd)[0]; // responseları bu channela gönder
+
       let type, payload;
 
       if (
         e.data instanceof ArrayBuffer || // blob'u chunk'lara ayırıp gönderdiyse
         e.data instanceof Blob // veya tek seferde bütün bir blob şeklinde gönderdiyse
       ) {
-        downloadBuffer.push(e.data) // download yapıyoruz demektir. buffera ekle.
+        downloadBuffer.push(e.data) // download yapıyoruz demektir. buffer'a ekle.
         return;
       } else {
         let parsed = JSON.parse(e.data);
         type = parsed.type;
         payload = parsed.payload;
       }
-
-      // hedef channelı tespit et
-      let localChannelEnd = dcMap[e.target.label];
-      let remoteChannelEnd = dcs.filter(dc => dc.label === localChannelEnd)[0]; // responseları bu channela gönder
 
       switch (type) {
         case "EMOJI":
@@ -380,19 +380,46 @@ const createDataChannel = async () => {
               const chunkSize = 16384; // 16Kb for cross browser compatibility
               let offset = 0;
               const reader = new FileReader();
-              reader.addEventListener("load", (event) => {
+              // helper function
+              const sendChunk = (event) => {
+                // console.log("BEFORE BUFFER: ", dc.bufferedAmount);
                 remoteChannelEnd.send(event.target.result)
+                // console.log("AFTER BUFFER: ", dc.bufferedAmount);
                 offset += event.target.result.byteLength;
                 if (offset < blob.size) {
                   readSlice(offset);
+                } else {
+                  remoteChannelEnd.send(JSON.stringify({ type: "DOWNLOAD_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
+                }
+              }
+              reader.addEventListener("load", (event) => {
+                // buffer boşalmamış. bu webrtc'nin kendi limitleriyle alakalı.
+                // buffer'ın boşalmasına abone olup gönder.
+                if (dc.bufferedAmount > dc.bufferedAmountLowThreshold) {
+                  dc.onbufferedamountlow = () => {
+                    dc.onbufferedamountlow = null;
+                    sendChunk(event);
+                  };
+                } else {
+                  // buffer sorunu yok, chunk'ı gönder.
+                  sendChunk(event);
                 }
               });
               reader.addEventListener("loadend", (event) => {
                 console.log("BLOB READ END: ", event.target.result);
-                if (event.target.result) { // if ended
-                  console.log("TARGET: ", e.target);
-                  remoteChannelEnd.send(JSON.stringify({ type: "DOWNLOAD_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
-                }
+                //
+                // NOT: webrtc nin bufferAmountTreshold muhabbeti yüzünden loadend eventini kullanamadık
+                // çünkü bitişi bunla bildirirsek şöyle bir sorun çıkıyor.
+                // diyelim ki buffer çok seri geldi ve o eventloopta boşalmadı
+                // bu sefer biz buffer'ın boşalmasına abone olup gönderiyoruz.
+                // o tamam ama bizim talebimizin süreklilik arzettiğini loadend anlamıyor
+                // ve eğer ki webrtc bufferAmount meselesine düşersen loadend tetikleniyor.
+                // yani bu loadend eventi büyük datalarda pek sağlıklı çalışmıyor.
+                //
+                // if (event.target.result) { // if ended
+                //   console.log("TARGET: ", e.target);
+                //   remoteChannelEnd.send(JSON.stringify({ type: "DOWNLOAD_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
+                // }
                 // reader.result contains the contents of blob as a typed array
               });
               const readSlice = o => {
@@ -430,19 +457,46 @@ const createDataChannel = async () => {
               const chunkSize = 16384; // 16Kb for cross browser compatibility
               let offset = 0;
               const reader = new FileReader();
-              reader.addEventListener("load", (event) => {
+              // helper function
+              const sendChunk = (event) => {
+                // console.log("BEFORE BUFFER: ", dc.bufferedAmount);
                 remoteChannelEnd.send(event.target.result)
+                // console.log("AFTER BUFFER: ", dc.bufferedAmount);
                 offset += event.target.result.byteLength;
                 if (offset < blob.size) {
                   readSlice(offset);
+                } else {
+                  remoteChannelEnd.send(JSON.stringify({ type: "VIEW_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }));
+                }
+              }
+              reader.addEventListener("load", (event) => {
+                // buffer boşalmamış. bu webrtc'nin kendi limitleriyle alakalı.
+                // buffer'ın boşalmasına abone olup gönder.
+                if (dc.bufferedAmount > dc.bufferedAmountLowThreshold) {
+                  dc.onbufferedamountlow = () => {
+                    dc.onbufferedamountlow = null;
+                    sendChunk(event);
+                  };
+                } else {
+                  // buffer sorunu yok, chunk'ı direk gönder.
+                  sendChunk(event);
                 }
               });
               reader.addEventListener("loadend", (event) => {
-                console.log("BLOB READ END: ", event.target.result);
-                if (event.target.result) { // if ended
-                  console.log("TARGET: ", e.target);
-                  remoteChannelEnd.send(JSON.stringify({ type: "VIEW_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
-                }
+                //
+                // NOT: webrtc nin bufferAmountTreshold muhabbeti yüzünden loadend eventini kullanamadık
+                // çünkü bitişi bunla bildirirsek şöyle bir sorun çıkıyor.
+                // diyelim ki buffer çok seri geldi ve o eventloopta boşalmadı
+                // bu sefer biz buffer'ın boşalmasına abone olup gönderiyoruz.
+                // o tamam ama bizim talebimizin süreklilik arzettiğini loadend anlamıyor
+                // ve eğer ki webrtc bufferAmount meselesine düşersen loadend tetikleniyor.
+                // yani bu loadend eventi büyük datalarda pek sağlıklı çalışmıyor.
+                //
+                // console.log("BLOB READ END: ", event.target.result);
+                // if (event.target.result) { // if ended
+                //   console.log("TARGET: ", e.target);
+                //   remoteChannelEnd.send(JSON.stringify({ type: "VIEW_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
+                // }
                 // reader.result contains the contents of blob as a typed array
               });
               const readSlice = o => {
