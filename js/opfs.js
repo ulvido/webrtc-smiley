@@ -23,7 +23,7 @@ const filesArea = document.getElementById("files");
 let opfsFiles = {};
 
 // WORKER
-let worker = new Worker("/js/worker/opfs-worker.js", { type: "module" });
+let worker = new Worker("js/worker/opfs-worker.js", { type: "module" });
 worker.addEventListener("message", e => {
   console.log(e.data);
   switch (e.data?.type) {

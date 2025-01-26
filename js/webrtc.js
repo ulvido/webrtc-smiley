@@ -106,7 +106,7 @@ navigator?.serviceWorker?.addEventListener("message", event => {
 // promise olarak mainden çağırılabilmesini sağlıyor.
 import * as Comlink from "./lib/comlink/comlink@4.4.2.min.js";
 async function init() {
-  const worker = new SharedWorker("./worker/comlink-demo.js", { type: "module" });
+  const worker = new SharedWorker("js/worker/comlink-demo.js", { type: "module" });
   /**
    * SharedWorkers communicate via the `postMessage` function in their `port` property.
    * Therefore you must use the SharedWorker's `port` property when calling `Comlink.wrap`.
@@ -120,14 +120,14 @@ init();
 
 
 // WORKER
-const demoWorker = new Worker("./worker/demo.js");
+const demoWorker = new Worker("js/worker/demo.js");
 demoWorker.addEventListener("message", e => {
   console.log("[MAIN WORKER]", e.data)
 })
 demoWorker.postMessage("naber worker");
 
 // SHARED WORKER
-const sharedWorker = new SharedWorker("./worker/shared.js", {
+const sharedWorker = new SharedWorker("js/worker/shared.js", {
   name: "test-shared-worker",
   credentials: "include",
 });
