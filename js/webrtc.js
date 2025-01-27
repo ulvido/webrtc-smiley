@@ -355,9 +355,17 @@ const createDataChannel = async () => {
       console.log("received e:", e);
       console.log("received:", e.data);
 
-      // hedef channelı tespit et
-      let localChannelEnd = dcMap[e.target.label];
-      let remoteChannelEnd = dcs.filter(dc => dc.label === localChannelEnd)[0]; // responseları bu channela gönder
+      // INFO:
+      // label -> local channel'ın kanal adı
+      // e.target.label -> remote channel'ın kanal adı
+      // dc -> local channel'ın kendisi
+      // channel, e.target -> remote channel'ın kendisi
+      // gönderim yaparken kanalın kendi tarafından gönderirsin. yani dc.send(...)
+      // console.log("label", label);
+      // console.log("e.target.label", e.target.label);
+      // console.log("dc", dc);
+      // console.log("e.target", e.target);
+      // console.log("channel", channel);
 
       let type, payload;
 
@@ -400,13 +408,13 @@ const createDataChannel = async () => {
               // helper function
               const sendChunk = (event) => {
                 // console.log("BEFORE BUFFER: ", dc.bufferedAmount);
-                remoteChannelEnd.send(event.target.result)
+                dc.send(event.target.result)
                 // console.log("AFTER BUFFER: ", dc.bufferedAmount);
                 offset += event.target.result.byteLength;
                 if (offset < blob.size) {
                   readSlice(offset);
                 } else {
-                  remoteChannelEnd.send(JSON.stringify({ type: "DOWNLOAD_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
+                  dc.send(JSON.stringify({ type: "DOWNLOAD_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
                 }
               }
               reader.addEventListener("load", (event) => {
@@ -477,13 +485,13 @@ const createDataChannel = async () => {
               // helper function
               const sendChunk = (event) => {
                 // console.log("BEFORE BUFFER: ", dc.bufferedAmount);
-                remoteChannelEnd.send(event.target.result)
+                dc.send(event.target.result)
                 // console.log("AFTER BUFFER: ", dc.bufferedAmount);
                 offset += event.target.result.byteLength;
                 if (offset < blob.size) {
                   readSlice(offset);
                 } else {
-                  remoteChannelEnd.send(JSON.stringify({ type: "VIEW_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }));
+                  dc.send(JSON.stringify({ type: "VIEW_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }));
                 }
               }
               reader.addEventListener("load", (event) => {
@@ -512,7 +520,7 @@ const createDataChannel = async () => {
                 // console.log("BLOB READ END: ", event.target.result);
                 // if (event.target.result) { // if ended
                 //   console.log("TARGET: ", e.target);
-                //   remoteChannelEnd.send(JSON.stringify({ type: "VIEW_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
+                //   dc.send(JSON.stringify({ type: "VIEW_COMPLETED", payload: { name: payload.filename, type: blob.type, lastModified: blob.lastModified || Date.now() } }))
                 // }
                 // reader.result contains the contents of blob as a typed array
               });
@@ -544,7 +552,7 @@ const createDataChannel = async () => {
       }
 
       // eğer ana makina ise mesajları diğer makinalara forward etsin.
-      if (pc?.localDescription?.type === "offer") {
+      if ((pc?.localDescription?.type === "offer") && JSON.parse(e.data)?.payload?.meta?.forward) {
         const senderRemoteLabel = e?.currentTarget?.label;
         const senderlocalLabel = dcMap[senderRemoteLabel] || null;
         if (senderlocalLabel) {
@@ -626,7 +634,7 @@ emojiBtnList.forEach(btn => {
     window.scrollTo(0, document.body.scrollHeight);
     // console.log("dcs", dcs);
     for (let i = 0; i < dcs.length; i++) {
-      dcs[i].send(JSON.stringify({ type: "EMOJI", payload: { text: e.target.value } }));
+      dcs[i].send(JSON.stringify({ type: "EMOJI", payload: { text: e.target.value, meta: { forward: true } } }));
     }
   })
 })
@@ -646,7 +654,7 @@ addEventListener("keydown", (e) => {
     console.log("dcs", dcs);
     // console.log("dcMap", dcMap);
     for (let i = 0; i < dcs.length; i++) {
-      dcs[i].send(JSON.stringify({ type: "EMOJI", payload: { text: emoji } }))
+      dcs[i].send(JSON.stringify({ type: "EMOJI", payload: { text: emoji, meta: { forward: true } } }))
     }
   }
   return;
