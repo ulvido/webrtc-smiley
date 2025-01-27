@@ -50,13 +50,13 @@ self.addEventListener("message", e => {
       return;
 
     case "DELETE_FILE":
-      opfsRoot.getFileHandle(e.data.payload?.filename)
-        .then(async fileHandle => {
-          if (fileHandle) {
-            await fileHandle.remove();
-            postMessage({ type: "FILE_DELETED", payload: { ...e.data.payload } })
-          }
-        });
+      opfsRoot
+        .removeEntry(e.data.payload?.filename)
+        .then(() => {
+          console.log(`DELETE successfull: "${e.data.payload?.filename}"`);
+          postMessage({ type: "FILE_DELETED", payload: { ...e.data.payload } })
+        })
+        .catch(console.error);
       return;
 
     default:
