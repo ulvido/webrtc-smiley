@@ -23,10 +23,12 @@ const filesArea = document.getElementById("files");
 let opfsFiles = {};
 
 // WORKER
+let worker;
+
 if (typeof (Worker) !== "undefined") {
   console.log("Yes! Web worker support!");
 
-  let worker = new Worker("js/worker/opfs-worker.js", { type: "module" });
+  worker = new Worker("js/worker/opfs-worker.js", { type: "module" });
   worker.addEventListener("message", e => {
     console.log(e.data);
     switch (e.data?.type) {
@@ -109,7 +111,11 @@ export const refreshLocalList = () => {
   if (0 < Object.keys(opfsFiles).length) {
     Object.values(opfsFiles).map(({ url }) => URL.revokeObjectURL(url));
   };
-  worker.postMessage({ type: "LIST_FILES" })
+  if (worker) {
+    worker.postMessage({ type: "LIST_FILES" });
+  } else {
+    console.log("OPFS: Web Worker not supported!");
+  }
 }
 
 export const createFileViews = (options = { id: "opfs-local", files: opfsFiles }) => {
