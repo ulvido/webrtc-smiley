@@ -9,7 +9,7 @@ const offerSdpArea = document.getElementById("sdp-offer");
 const answerSdpArea = document.getElementById("sdp-answer");
 const connectionWrapper = document.querySelector(".wrapper");
 const msgWrapper = document.querySelector(".msg-wrapper");
-const channelLabel = document.getElementById("datachannel-label");
+const channelList = document.getElementById("datachannel-list");
 const messages = document.getElementById("messages");
 const emojiBtnList = document.querySelectorAll(".btn-emoji");
 const btnCopyOffer = document.getElementById("btn-copy-offer");
@@ -330,10 +330,24 @@ const createDataChannel = async () => {
 
     channel.addEventListener("open", (event) => {
       console.log("DATACHANNEL OPENED", channel);
-      dcMap[channel.label] = label;
+      dcMap[channel.label] = {
+        localChannelName: label,
+        isOffer: pc?.localDescription?.type === "offer" || false,
+      };
       msgWrapper.style.visibility = "visible";
-      channelLabel.innerText = Object.keys(dcMap).map(remoteLabel => `<<${dcMap[remoteLabel]}__${remoteLabel}>>`).join(" | ");
-      // channelLabel.innerText = dcs.map(dc => dc.label).join(" | ");
+      channelList.innerText = ""; // kanal listesini resetledik. hemen altta baştan oluşturacaz.
+      Object.keys(dcMap).map((remoteLabel) => {
+        let li = document.createElement("li");
+        li.style.fontSize = "12px";
+        li.innerHTML = `<u>LOCAL</u> ${dcMap[remoteLabel].localChannelName} <strong>><</strong> <u>REMOTE</u> ${remoteLabel}`;
+        if (dcMap[remoteLabel].isOffer) {
+          li.innerHTML = "<strong>[OFFERER]</strong> " + li.innerHTML;
+        } else {
+          li.innerHTML = li.innerHTML + " <strong>[OFFERER]</strong>";
+
+        }
+        channelList.append(li);
+      });
       createBtn.style.display = "block";
       cancelBtn.style.display = "none";
       datachannelBtn.style.display = "none";
@@ -554,7 +568,7 @@ const createDataChannel = async () => {
       // eğer ana makina ise mesajları diğer makinalara forward etsin.
       if ((pc?.localDescription?.type === "offer") && JSON.parse(e.data)?.payload?.meta?.forward) {
         const senderRemoteLabel = e?.currentTarget?.label;
-        const senderlocalLabel = dcMap[senderRemoteLabel] || null;
+        const senderlocalLabel = dcMap[senderRemoteLabel].localChannelName || null;
         if (senderlocalLabel) {
           let otherChannels = dcs.filter(dc => dc.label !== senderlocalLabel);
           if (otherChannels) {
