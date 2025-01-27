@@ -23,34 +23,40 @@ const filesArea = document.getElementById("files");
 let opfsFiles = {};
 
 // WORKER
-let worker = new Worker("js/worker/opfs-worker.js", { type: "module" });
-worker.addEventListener("message", e => {
-  console.log(e.data);
-  switch (e.data?.type) {
+if (typeof (Worker) !== "undefined") {
+  console.log("Yes! Web worker support!");
 
-    case "WORKER_READY":
-    case "FILE_SAVED":
-    case "FILE_DELETED":
-      // refresh file list
-      refreshLocalList();
-      break;
+  let worker = new Worker("js/worker/opfs-worker.js", { type: "module" });
+  worker.addEventListener("message", e => {
+    console.log(e.data);
+    switch (e.data?.type) {
 
-    case "FILE_FROM_OPFS":
-      // opfsFiles[e.data.payload.filename] = e.data.payload;
-      // createFileViews({ id: "opfs-local", files: opfsFiles })
-      break;
+      case "WORKER_READY":
+      case "FILE_SAVED":
+      case "FILE_DELETED":
+        // refresh file list
+        refreshLocalList();
+        break;
 
-    case "LIST_FILES_DONE":
-      opfsFiles = e.data.payload.allFiles;
-      createFileViews({ id: "opfs-local", files: opfsFiles });
-      // for sending files to remote channels, make them refresh themselves
-      broadcast.postMessage(JSON.stringify({ type: "FILES_REFRESHED", payload: { opfsFiles } }));
-      break;
+      case "FILE_FROM_OPFS":
+        // opfsFiles[e.data.payload.filename] = e.data.payload;
+        // createFileViews({ id: "opfs-local", files: opfsFiles })
+        break;
 
-    default:
-      break;
-  }
-});
+      case "LIST_FILES_DONE":
+        opfsFiles = e.data.payload.allFiles;
+        createFileViews({ id: "opfs-local", files: opfsFiles });
+        // for sending files to remote channels, make them refresh themselves
+        broadcast.postMessage(JSON.stringify({ type: "FILES_REFRESHED", payload: { opfsFiles } }));
+        break;
+
+      default:
+        break;
+    }
+  });
+} else {
+  console.log("Sorry! No Web Worker support!");
+}
 
 // HELPERS
 export const showFiles = () => {

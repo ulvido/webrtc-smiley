@@ -100,42 +100,59 @@ navigator?.serviceWorker?.addEventListener("message", event => {
 //   });
 // })
 
+
+// WORKER
+if (typeof (Worker) !== "undefined") {
+  console.log("Yes! Web worker support!");
+
+  const demoWorker = new Worker("js/worker/demo.js");
+  demoWorker.addEventListener("message", e => {
+    console.log("[MAIN WORKER]", e.data)
+  })
+  demoWorker.postMessage("naber worker");
+} else {
+  console.log("Sorry! No Web Worker support!");
+}
+// 
+// -- SHARED WORKER
+// 
 // COMLINK WORKER
 // bu kütüphane çok küçük -> 5kb falan.
 // workerda tanımladığın bir API'nin
 // promise olarak mainden çağırılabilmesini sağlıyor.
 import * as Comlink from "./lib/comlink/comlink@4.4.2.min.js";
-async function init() {
-  const worker = new SharedWorker("js/worker/comlink-demo.js", { type: "module" });
-  /**
-   * SharedWorkers communicate via the `postMessage` function in their `port` property.
-   * Therefore you must use the SharedWorker's `port` property when calling `Comlink.wrap`.
-   */
-  const obj = Comlink.wrap(worker.port); // illa workerla aynı olsun diye obj koymak zorunda değilsin. 
-  console.log(`[COMLINK] Counter now (about to increment): ${await obj.counter}`);
-  await obj.inc();
-  console.log(`[COMLINK] Counter: ${await obj.counter}`);
+// andorid chrome SharedWorker desteklemiyor. önce kontrol etmemiz lazım.
+if (typeof (SharedWorker) !== "undefined") {
+  console.log("Yes! SharedWorker support!");
+
+  // COMMLINK INIT
+  async function init() {
+    const worker = new SharedWorker("js/worker/comlink-demo.js", { type: "module" });
+    /**
+     * SharedWorkers communicate via the `postMessage` function in their `port` property.
+     * Therefore you must use the SharedWorker's `port` property when calling `Comlink.wrap`.
+     */
+    const obj = Comlink.wrap(worker.port); // illa workerla aynı olsun diye obj koymak zorunda değilsin. 
+    console.log(`[COMLINK] Counter now (about to increment): ${await obj.counter}`);
+    await obj.inc();
+    console.log(`[COMLINK] Counter: ${await obj.counter}`);
+  }
+  init();
+
+  // SHARED WORKER SAMPLE
+  const sharedWorker = new SharedWorker("js/worker/shared.js", {
+    name: "test-shared-worker",
+    credentials: "include",
+  });
+  sharedWorker.port.start();
+  sharedWorker.port.addEventListener("message", e => {
+    console.log("[MAIN SHARED WORKER]", e.data)
+  })
+  sharedWorker.port.postMessage("naber shared worker");
+} else {
+  console.log("Sorry! No SharedWorker support!");
 }
-init();
 
-
-// WORKER
-const demoWorker = new Worker("js/worker/demo.js");
-demoWorker.addEventListener("message", e => {
-  console.log("[MAIN WORKER]", e.data)
-})
-demoWorker.postMessage("naber worker");
-
-// SHARED WORKER
-const sharedWorker = new SharedWorker("js/worker/shared.js", {
-  name: "test-shared-worker",
-  credentials: "include",
-});
-sharedWorker.port.start();
-sharedWorker.port.addEventListener("message", e => {
-  console.log("[MAIN SHARED WORKER]", e.data)
-})
-sharedWorker.port.postMessage("naber shared worker");
 
 // I - BROADCAST
 // dikkat herkese gönderiyor. 
