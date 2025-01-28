@@ -416,7 +416,8 @@ const createDataChannel = async () => {
           fetch(payload.url)
             .then(f => f.blob())
             .then(blob => {
-              const chunkSize = 16384; // 16Kb for cross browser compatibility
+              // const chunkSize = 16 * 1024; // 16Kb for cross browser and backwards compatibility
+              const chunkSize = 64 * 1024; // 64Kb (firefox ile chrome arasındaki bug fixlenmiş)
               let offset = 0;
               const reader = new FileReader();
               // helper function
@@ -493,7 +494,8 @@ const createDataChannel = async () => {
           fetch(payload.url)
             .then(f => f.blob())
             .then(blob => {
-              const chunkSize = 16384; // 16Kb for cross browser compatibility
+              // const chunkSize = 16 * 1024; // 16Kb for cross browser and backwards compatibility
+              const chunkSize = 64 * 1024; // 64Kb (firefox ile chrome arasındaki bug fixlenmiş)
               let offset = 0;
               const reader = new FileReader();
               // helper function
