@@ -12,7 +12,7 @@ docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v $(pwd):/data -w /data -
 
 sqlite testleri (http 3000)
 ```bash
-npx serve lib/sqlite-wasm-3470000/
+npx serve lib/sqlite-wasm-3480000/
 ```
 
 ##### Sertifika Oluşturmak

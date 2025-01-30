@@ -43,8 +43,7 @@
 
      ./c-pp -f tester1.c-pp.js -o tester1-esm.js -Dtarget=es6-module
 */
-import {default as sqlite3InitModule} from './jswasm/sqlite3.mjs';
-globalThis.sqlite3InitModule = sqlite3InitModule;
+'use strict';
 (function(self){
   /**
      Set up our output channel differently depending
@@ -1244,8 +1243,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       let st = this.db.prepare(
         new TextEncoder('utf-8').encode("select 3 as a")
       );
-      //debug("statement =",st);
-      T.assert( !this.progressHandlerCount );
       let rc;
       try {
         T.assert(wasm.isPtr(st.pointer))
@@ -3357,6 +3354,29 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       warn: ()=>{},
       error: ()=>{}
     }
+  }
+  if(!globalThis.sqlite3InitModule && !isUIThread()){
+    /* Vanilla worker, as opposed to an ES6 module worker */
+    /*
+      If sqlite3.js is in a directory other than this script, in order
+      to get sqlite3.js to resolve sqlite3.wasm properly, we have to
+      explicitly tell it where sqlite3.js is being loaded from. We do
+      that by passing the `sqlite3.dir=theDirName` URL argument to
+      _this_ script. That URL argument will be seen by the JS/WASM
+      loader and it will adjust the sqlite3.wasm path accordingly. If
+      sqlite3.js/.wasm are in the same directory as this script then
+      that's not needed.
+
+      URL arguments passed as part of the filename via importScripts()
+      are simply lost, and such scripts see the globalThis.location of
+      _this_ script.
+    */
+    let sqlite3Js = 'sqlite3.js';
+    const urlParams = new URL(globalThis.location.href).searchParams;
+    if(urlParams.has('sqlite3.dir')){
+      sqlite3Js = urlParams.get('sqlite3.dir') + '/' + sqlite3Js;
+    }
+    importScripts(sqlite3Js);
   }
   globalThis.sqlite3InitModule.__isUnderTest =
     true /* disables certain API-internal cleanup so that we can
