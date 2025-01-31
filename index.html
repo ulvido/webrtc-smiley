@@ -13,6 +13,7 @@
   <!-- <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script> -->
   <script defer src="js/adapter.js"></script>
   <script defer type="module" src="js/webrtc.js"></script>
+  <script defer type="module" src="js/sqlite.js"></script>
 </head>
 
 <body>
@@ -60,6 +61,16 @@
     <input type="button" id="btn-save" value="Save">
     <hr>
     <div id="files"></div>
+  </div>
+  <div class="db-wrapper">
+    <hr>
+    <h3>SQLite</h3>
+    <h6 style="font-style: italic; font-weight: 400; margin: 0 0 4px 0;">Her satır 1 komut. Satır sonlarına ; koymayı
+      unutma!</h6>
+    <textarea name="sql" id="sql" placeholder="sql command..." rows="4" cols="50" style="padding: 12px;"></textarea><br>
+    <input type="button" id="btn-sql-run" value="INITIALIZING DB..." style="width: 172px !important;" disabled>
+    <div id="sql-result"></div>
+    <hr>
   </div>
 </body>
 

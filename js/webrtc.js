@@ -17,6 +17,7 @@ const btnCopyAnswer = document.getElementById("btn-copy-answer");
 const loader = document.querySelectorAll(".loader");
 const clear = document.getElementById("clear");
 
+
 // opfs working?
 // navigator.storage.getDirectory().then(root => {
 //   const fileHandle = root.getFileHandle("my first file", {
@@ -105,6 +106,7 @@ navigator?.serviceWorker?.addEventListener("message", event => {
 if (typeof (Worker) !== "undefined") {
   console.log("Yes! Web worker support!");
 
+  // -- demo worker
   const demoWorker = new Worker("js/worker/demo.js");
   demoWorker.addEventListener("message", e => {
     console.log("[MAIN WORKER]", e.data)
