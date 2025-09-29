@@ -12,19 +12,19 @@
   ],
   "icons": [
     {
-      "src": "webrtc.png",
+      "src": "applet.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
   "screenshots": [
     {
-      "src": "webrtc.png",
+      "src": "applet.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "webrtc.png",
+      "src": "applet.png",
       "sizes": "512x512",
       "type": "image/png"
     }

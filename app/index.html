@@ -13,7 +13,7 @@
     if ("serviceWorker" in navigator) {
       // window.addEventListener("load", () => {
       navigator.serviceWorker
-        .register("app/sw2.js")
+        .register("sw2.js", { scope: `/app/` })
         .then(
           reg => console.log("[SW2] Registered ✓"/*, reg*/),
           error => console.log("[SW2] Registration failed!", error))
@@ -29,6 +29,7 @@
   <h1>APPLET</h1>
   <a href="/">Anasayfa</a>
   <button onclick="history.back()">History back</button>
+  <script type="module" src="script.js"></script>
 </body>
 
 </html>

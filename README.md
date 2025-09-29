@@ -1,24 +1,37 @@
 # WEBRTC SMILEY
 
 ana site server (https 5000)
+
+`https://localhost:5000`
+
+applet
+
+`https://localhost:5000/app/index.html`
+
+NOT: ana site ve applet farklı sw içerdiği için, iki ayrı PWA olarak kurulabiliyor.
+
 ```bash
-npx ssl-serve --ssl
+bunx ssl-serve --ssl
 ```
 
 docker ile
+
 ```bash
 docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v $(pwd):/data -w /data -p 5000:5000 node:20.15.0-bookworm-slim npx ssl-serve --ssl
 ```
 
 sqlite testleri (http 3000)
+
 ```bash
-npx serve lib/sqlite-wasm-3480000/
+bunx serve lib/sqlite-wasm-3500400/
 ```
 
 ##### Sertifika Oluşturmak
+
 https://github.com/FiloSottile/mkcert
 
 webrtc bağlantı kurulması
+
 1. iki cihaz da aynı siteye girecek. (farklı serverlarda çalışan aynı siteye de girebiliyor. ör: pc localhosttaki kendi serverına girerken, telefon raspberryde çalışan başka bir servera girebiliyor. önemli olan sdp değişimi. yani iki tarafın da bana şu şekilde ulaşabilirsin diyebilmesi lazım.)
 2. arama yapacak cihaz call'a basıcak. (create offer)
 3. oluşan offer'ı diğer makina sahibine gönderecek (whatsapp vs. ile ver)
@@ -29,4 +42,4 @@ webrtc bağlantı kurulması
 
 ##### - GOTCHA
 
-> offer oluşturmadan önce ya `mediastream` ya da `datachannel`'dan <ins>en az birini</ins> oluşturman gerekiyor. aksi halde o zaman ne halt yemeye bağlanıyon hayırdır gibisinden hata veriyor.  
+> offer oluşturmadan önce ya `mediastream` ya da `datachannel`'dan <ins>en az birini</ins> oluşturman gerekiyor. aksi halde o zaman ne halt yemeye bağlanıyon hayırdır gibisinden hata veriyor.

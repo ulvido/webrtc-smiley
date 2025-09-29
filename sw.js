@@ -6,70 +6,96 @@
 // import { activateBGServices } from "./services.js";
 
 try {
-  // sw - is intalled
-  self.addEventListener("install", e => {
-    console.log("[SW] Installed.");
-  });
+	// sw - is intalled
+	self.addEventListener("install", (e) => {
+		console.log("[SW] Installed.");
+	});
 
-  // sw - is activated
-  self.addEventListener("activate", e => {
-    console.log("[SW] Activated.");
-  });
+	// sw - is activated
+	self.addEventListener("activate", (e) => {
+		console.log("[SW] Activated.");
+	});
 
-  // activateBGServices();
+	// activateBGServices();
 
-  // I - BROADCAST
-  // dikkat herkese gönderiyor. 
-  // yeni tab açsan bile eski taba da gönderiyor.
-  const broadcast = new BroadcastChannel('channel-123');
-  broadcast.postMessage("[BROADCAST SW] den selamlar");
-  broadcast.addEventListener("message", e => {
-    console.log("[BORADCAST SW] mekanına düştün", e.data);
-  })
+	// I - BROADCAST
+	// dikkat herkese gönderiyor.
+	// yeni tab açsan bile eski taba da gönderiyor.
+	const broadcast = new BroadcastChannel("channel-123");
+	broadcast.postMessage("[BROADCAST SW] den selamlar");
+	broadcast.addEventListener("message", (e) => {
+		console.log("[BORADCAST SW] mekanına düştün", e.data);
+	});
 
-  // II - CLIENT API
-  self.addEventListener("message", e => {
-    console.log("[SW] sw mesaj geldi. swdeki abonelik", e);
-    // shared workerla iletişim
-    e.ports[0]?.addEventListener("message", e => {
-      console.log("[SW] shared workerdan geldi")
-    })
-    e.ports[0]?.postMessage("servisten shareda")
-    // to the tab
-    e.source.postMessage("Hi client");
-    // to all window clients
-    self.clients
-      .matchAll({ includeUncontrolled: true, type: "window" })
-      .then(clients => {
-        console.log("CLIENTS", clients);
-        if (clients && clients.length) {
-          //Respond to last focused tab
-          clients.forEach(client => {
-            client.postMessage("[SW] to all clients");
-          });
-        }
-      });
-    // to worker clients
-    self.clients
-      .matchAll({ includeUncontrolled: true, type: "worker" })
-      .then(workers => {
-        console.log("WORKERS", workers);
-        if (workers && workers.length) {
-          //Respond to last focused tab
-          workers.forEach(worker => {
-            worker.postMessage("[SW] to workers"); // çalışmıyor
-          });
-        }
-      });
+	// II - CLIENT API
+	self.addEventListener("message", (e) => {
+		console.log("[SW] sw mesaj geldi. swdeki abonelik", e);
+		// shared workerla iletişim
+		e.ports[0]?.addEventListener("message", (e) => {
+			console.log("[SW] shared workerdan geldi");
+		});
+		e.ports[0]?.postMessage("servisten shareda");
+		// to the tab
+		e.source.postMessage("Hi client");
+		// to all window clients
+		self.clients.matchAll({ includeUncontrolled: true, type: "window" }).then((clients) => {
+			console.log("CLIENTS", clients);
+			if (clients && clients.length) {
+				//Respond to last focused tab
+				clients.forEach((client) => {
+					client.postMessage("[SW] to all clients");
+				});
+			}
+		});
+		// to worker clients
+		self.clients.matchAll({ includeUncontrolled: true, type: "worker" }).then((workers) => {
+			console.log("WORKERS", workers);
+			if (workers && workers.length) {
+				//Respond to last focused tab
+				workers.forEach((worker) => {
+					worker.postMessage("[SW] to workers"); // çalışmıyor
+				});
+			}
+		});
 
-    // III - MESSAGE CHANNEL
-    // e.ports[0].postMessage("port hülooo from sw");
-    // e.ports[0].addEventListener("message", e => {
-    //   console.log("[SW] port mesajı dinleme.", e)
-    // })
-  });
+		// III - MESSAGE CHANNEL
+		// e.ports[0].postMessage("port hülooo from sw");
+		// e.ports[0].addEventListener("message", e => {
+		//   console.log("[SW] port mesajı dinleme.", e)
+		// })
+	});
 
-
+	// catch fetch events
+	self.addEventListener("fetch", (e) => {
+		console.log("[SW] Fetch event for ", e.request.url);
+		// can intercept own requests
+		if (e.request.url.includes("todos/1")) {
+			e.respondWith(
+				new Response(
+					JSON.stringify({ mrb: 1, esenlikler: 1, title: "değiştirilmiş görev main sw değiştirdi", completed: false }),
+					{
+						headers: { "Content-Type": "application/json" },
+					}
+				)
+			);
+		}
+		// can NOT intercept other requests (scope /app/)
+		if (e.request.url.includes("todos/2")) {
+			e.respondWith(
+				new Response(
+					JSON.stringify({
+						mrb: 2,
+						esenlikler: 2,
+						title: "değiştirilmiş görev main sw değiştirdi (değiştiremedi)",
+						completed: false,
+					}),
+					{
+						headers: { "Content-Type": "application/json" },
+					}
+				)
+			);
+		}
+	});
 } catch (err) {
-  console.error(err);
+	console.error(err);
 }

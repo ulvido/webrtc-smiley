@@ -17,15 +17,13 @@ app.use(
 // -- static file serving
 app.use("*", serveStatic({ root: "./" }));
 
-app.get("/", serveStatic({ path: "./index.html" }));
-
 // starting the server
 const { port } = Bun.serve({
 	fetch: app.fetch,
 	port: process.env.PORT || 5000, // default: 3000
 	tls: {
-		key: Bun.file("example.com+6-key.pem"),
-		cert: Bun.file("example.com+6.pem"),
+		key: Bun.file("key.pem"),
+		cert: Bun.file("cert.pem"),
 	},
 });
 
