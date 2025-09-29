@@ -13,7 +13,9 @@
   Demonstration of the sqlite3 Worker API #1 Promiser: a Promise-based
   proxy for for the sqlite3 Worker #1 API.
 */
-import {default as promiserFactory} from "./jswasm/sqlite3-worker1-promiser.mjs";
+"use strict";
+const promiserFactory = globalThis.sqlite3Worker1Promiser.v2;
+delete globalThis.sqlite3Worker1Promiser;
 (async function(){
   const T = globalThis.SqliteTestUtil;
   const eOutput = document.querySelector('#test-output');
@@ -34,6 +36,18 @@ import {default as promiserFactory} from "./jswasm/sqlite3-worker1-promiser.mjs"
   };
 
   const promiserConfig = {
+    /**
+       The v1 interfaces uses an onready function. The v2 interface optionally
+       accepts one but does not require it. If provided, it is called _before_
+       the promise is resolved, and the promise is rejected if onready() throws.
+    */
+    onready: function(f){
+      /* f === the function returned by promiserFactory().
+         Ostensibly (f === workerPromise) but this function is
+         called before the promiserFactory() Promise resolves, so
+         before workerPromise is set. */
+      console.warn("This is the v2 interface - you don't need an onready() function.");
+    },
     debug: 1 ? undefined : (...args)=>console.debug('worker debug',...args),
     onunhandled: function(ev){
       error("Unhandled worker message:",ev.data);
@@ -95,6 +109,7 @@ import {default as promiserFactory} from "./jswasm/sqlite3-worker1-promiser.mjs"
             "insert into t(a,b) values(1,2),(3,4),(5,6)"
            ].join(';'),
       resultRows: [], columnNames: [],
+      lastInsertRowId: true,
       countChanges: sqConfig.bigIntEnabled ? 64 : true
     }, function(ev){
       ev = ev.result;
@@ -102,7 +117,9 @@ import {default as promiserFactory} from "./jswasm/sqlite3-worker1-promiser.mjs"
         .assert(0===ev.columnNames.length)
         .assert(sqConfig.bigIntEnabled
                 ? (3n===ev.changeCount)
-                : (3===ev.changeCount));
+                : (3===ev.changeCount))
+        .assert('bigint'===typeof ev.lastInsertRowId)
+        .assert(ev.lastInsertRowId>=3);
     });
 
     await wtest('exec',{

@@ -26,9 +26,9 @@
 /*
 ** This code was built from sqlite3 version...
 **
-** SQLITE_VERSION "3.48.0"
-** SQLITE_VERSION_NUMBER 3048000
-** SQLITE_SOURCE_ID "2025-01-14 11:05:00 d2fe6b05f38d9d7cd78c5d252e99ac59f1aea071d669830c1ffe4e8966e84010"
+** SQLITE_VERSION "3.50.4"
+** SQLITE_VERSION_NUMBER 3050004
+** SQLITE_SOURCE_ID "2025-07-30 19:33:53 4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3"
 **
 ** Using the Emscripten SDK version 3.1.70.
 */
@@ -4395,9 +4395,10 @@ run();
 
 
 
-if(!Module.postRun) Module.postRun = [];
-Module.postRun.push(function(Module){
+Module.runSQLite3PostLoadInit = function(EmscriptenModule){
+  
   'use strict';
+  
   
 
 
@@ -5117,41 +5118,48 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   
   capi.sqlite3_db_config = function(pDb, op, ...args){
-    if(!this.s){
-      this.s = wasm.xWrap('sqlite3__wasm_db_config_s','int',
-                          ['sqlite3*', 'int', 'string:static']
-                          );
-      this.pii = wasm.xWrap('sqlite3__wasm_db_config_pii', 'int',
-                            ['sqlite3*', 'int', '*','int', 'int']);
-      this.ip = wasm.xWrap('sqlite3__wasm_db_config_ip','int',
-                           ['sqlite3*', 'int', 'int','*']);
-    }
     switch(op){
-        case capi.SQLITE_DBCONFIG_ENABLE_FKEY:
-        case capi.SQLITE_DBCONFIG_ENABLE_TRIGGER:
-        case capi.SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
-        case capi.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
-        case capi.SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
-        case capi.SQLITE_DBCONFIG_ENABLE_QPSG:
-        case capi.SQLITE_DBCONFIG_TRIGGER_EQP:
-        case capi.SQLITE_DBCONFIG_RESET_DATABASE:
-        case capi.SQLITE_DBCONFIG_DEFENSIVE:
-        case capi.SQLITE_DBCONFIG_WRITABLE_SCHEMA:
-        case capi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
-        case capi.SQLITE_DBCONFIG_DQS_DML:
-        case capi.SQLITE_DBCONFIG_DQS_DDL:
-        case capi.SQLITE_DBCONFIG_ENABLE_VIEW:
-        case capi.SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
-        case capi.SQLITE_DBCONFIG_TRUSTED_SCHEMA:
-        case capi.SQLITE_DBCONFIG_STMT_SCANSTATUS:
-        case capi.SQLITE_DBCONFIG_REVERSE_SCANORDER:
-          return this.ip(pDb, op, args[0], args[1] || 0);
-        case capi.SQLITE_DBCONFIG_LOOKASIDE:
-          return this.pii(pDb, op, args[0], args[1], args[2]);
-        case capi.SQLITE_DBCONFIG_MAINDBNAME:
-          return this.s(pDb, op, args[0]);
-        default:
-          return capi.SQLITE_MISUSE;
+      case capi.SQLITE_DBCONFIG_ENABLE_FKEY:
+      case capi.SQLITE_DBCONFIG_ENABLE_TRIGGER:
+      case capi.SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
+      case capi.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
+      case capi.SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
+      case capi.SQLITE_DBCONFIG_ENABLE_QPSG:
+      case capi.SQLITE_DBCONFIG_TRIGGER_EQP:
+      case capi.SQLITE_DBCONFIG_RESET_DATABASE:
+      case capi.SQLITE_DBCONFIG_DEFENSIVE:
+      case capi.SQLITE_DBCONFIG_WRITABLE_SCHEMA:
+      case capi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
+      case capi.SQLITE_DBCONFIG_DQS_DML:
+      case capi.SQLITE_DBCONFIG_DQS_DDL:
+      case capi.SQLITE_DBCONFIG_ENABLE_VIEW:
+      case capi.SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
+      case capi.SQLITE_DBCONFIG_TRUSTED_SCHEMA:
+      case capi.SQLITE_DBCONFIG_STMT_SCANSTATUS:
+      case capi.SQLITE_DBCONFIG_REVERSE_SCANORDER:
+      case capi.SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE:
+      case capi.SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE:
+      case capi.SQLITE_DBCONFIG_ENABLE_COMMENTS:
+        if( !this.ip ){
+          this.ip = wasm.xWrap('sqlite3__wasm_db_config_ip','int',
+                               ['sqlite3*', 'int', 'int', '*']);
+        }
+        return this.ip(pDb, op, args[0], args[1] || 0);
+      case capi.SQLITE_DBCONFIG_LOOKASIDE:
+        if( !this.pii ){
+          this.pii = wasm.xWrap('sqlite3__wasm_db_config_pii', 'int',
+                                ['sqlite3*', 'int', '*', 'int', 'int']);
+        }
+        return this.pii(pDb, op, args[0], args[1], args[2]);
+      case capi.SQLITE_DBCONFIG_MAINDBNAME:
+        if(!this.s){
+          this.s = wasm.xWrap('sqlite3__wasm_db_config_s','int',
+                              ['sqlite3*', 'int', 'string:static']
+                              );
+        }
+        return this.s(pDb, op, args[0]);
+      default:
+        return capi.SQLITE_MISUSE;
     }
   }.bind(Object.create(null));
 
@@ -7123,13 +7131,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }),
       '*'
     ]],
+    
     ["sqlite3_set_auxdata", undefined, [
       "sqlite3_context*", "int", "*",
-      new wasm.xWrap.FuncPtrAdapter({
-        name: 'xDestroyAuxData',
-        signature: 'v(*)',
-        contextKey: (argv, argIndex)=>argv[0]
-      })
+      true
+        ? "*"
+        : new wasm.xWrap.FuncPtrAdapter({
+          
+          name: 'xDestroyAuxData',
+          signature: 'v(p)',
+          contextKey: (argv, argIndex)=>argv[0]
+        })
     ]],
     ["sqlite3_shutdown", undefined],
     ["sqlite3_sourceid", "string"],
@@ -7778,6 +7790,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       'sqlite3_set_authorizer',
       'sqlite3_trace_v2',
       'sqlite3_update_hook'
+      
     ]) {
       const x = wasm.exports[name];
       if( !x ){
@@ -8399,7 +8412,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if(!(tgt instanceof StructBinder.StructType)){
       toss("Usage error: target object is-not-a StructType.");
     }else if(!(func instanceof Function) && !wasm.isPtr(func)){
-      toss("Usage errror: expecting a Function or WASM pointer to one.");
+      toss("Usage error: expecting a Function or WASM pointer to one.");
     }
     if(1===arguments.length){
       return (n,f)=>callee(tgt, n, f, applyArgcCheck);
@@ -8498,7 +8511,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
 
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
-  sqlite3.version = {"libVersion": "3.48.0", "libVersionNumber": 3048000, "sourceId": "2025-01-14 11:05:00 d2fe6b05f38d9d7cd78c5d252e99ac59f1aea071d669830c1ffe4e8966e84010","downloadVersion": 3480000};
+  sqlite3.version = {"libVersion": "3.50.4", "libVersionNumber": 3050004, "sourceId": "2025-07-30 19:33:53 4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3","downloadVersion": 3500400};
 });
 
 
@@ -9738,6 +9751,12 @@ sqlite3.initWorker1API = function(){
         db.exec(rc);
         if(undefined !== changeCount){
           rc.changeCount = db.changes(true,64===rc.countChanges) - changeCount;
+        }
+        const lastInsertRowId = !!rc.lastInsertRowId
+              ? sqlite3.capi.sqlite3_last_insert_rowid(db)
+              : undefined;
+        if( undefined!==lastInsertRowId ){
+          rc.lastInsertRowId = lastInsertRowId;
         }
         if(rc.callback instanceof Function){
           rc.callback = theCallback;
@@ -11090,6 +11109,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi.SQLITE_OPEN_MAIN_JOURNAL |
         capi.SQLITE_OPEN_SUPER_JOURNAL |
         capi.SQLITE_OPEN_WAL;
+  const FLAG_COMPUTE_DIGEST_V2 = capi.SQLITE_OPEN_MEMORY
+  ;
 
   
   const OPAQUE_DIR_NAME = ".opaque";
@@ -11328,6 +11349,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
       const pool = getPoolForVfs(pVfs);
       try{
+        flags &= ~FLAG_COMPUTE_DIGEST_V2;
         pool.log(`xOpen ${wasm.cstrToJs(zName)} ${flags}`);
         
         const path = (zName && wasm.peek8(zName))
@@ -11478,21 +11500,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     
     getFileNames(){
       const rc = [];
-      const iter = this.#mapFilenameToSAH.keys();
-      for(const n of iter) rc.push(n);
+      for(const n of this.#mapFilenameToSAH.keys()) rc.push(n);
       return rc;
     }
-
-
-
-
-
-
-
-
-
-
-
 
     
     async addCapacity(n){
@@ -11534,7 +11544,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     
-    async acquireAccessHandles(clearFiles){
+    async acquireAccessHandles(clearFiles=false){
       const files = [];
       for await (const [name,h] of this.#dhOpaque){
         if('file'===h.kind){
@@ -11581,7 +11591,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
       const fileDigest = new Uint32Array(HEADER_DIGEST_SIZE / 4);
       sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST});
-      const compDigest = this.computeDigest(this.#apBody);
+      const compDigest = this.computeDigest(this.#apBody, flags);
+      
       if(fileDigest.every((v,i) => v===compDigest[i])){
         
         const pathBytes = this.#apBody.findIndex((v)=>0===v);
@@ -11590,6 +11601,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           
           sah.truncate(HEADER_OFFSET_DATA);
         }
+        
         return pathBytes
           ? textDecoder.decode(this.#apBody.subarray(0,pathBytes))
           : '';
@@ -11607,10 +11619,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(HEADER_MAX_PATH_SIZE <= enc.written + 1){
         toss("Path too long:",path);
       }
+      if(path && flags){
+        
+        flags |= FLAG_COMPUTE_DIGEST_V2;
+      }
       this.#apBody.fill(0, enc.written, HEADER_MAX_PATH_SIZE);
       this.#dvBody.setUint32(HEADER_OFFSET_FLAGS, flags);
-
-      const digest = this.computeDigest(this.#apBody);
+      const digest = this.computeDigest(this.#apBody, flags);
+      
       sah.write(this.#apBody, {at: 0});
       sah.write(digest, {at: HEADER_OFFSET_DIGEST});
       sah.flush();
@@ -11626,14 +11642,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     
-    computeDigest(byteArray){
-      let h1 = 0xdeadbeef;
-      let h2 = 0x41c6ce57;
-      for(const v of byteArray){
-        h1 = 31 * h1 + (v * 307);
-        h2 = 31 * h2 + (v * 307);
+    computeDigest(byteArray, fileFlags){
+      if( fileFlags & FLAG_COMPUTE_DIGEST_V2 ){
+        let h1 = 0xdeadbeef;
+        let h2 = 0x41c6ce57;
+        for(const v of byteArray){
+          h1 = Math.imul(h1 ^ v, 2654435761);
+          h2 = Math.imul(h2 ^ v, 104729);
+        }
+        return new Uint32Array([h1>>>0, h2>>>0]);
+      }else{
+        
+        return new Uint32Array([0,0]);
       }
-      return new Uint32Array([h1>>>0, h2>>>0]);
     }
 
     
@@ -11737,12 +11758,41 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         );
         this.#dhVfsRoot = this.#dhVfsParent = undefined;
       }catch(e){
-        sqlite3.config.error(this.vfsName,"removeVfs() failed:",e);
+        sqlite3.config.error(this.vfsName,"removeVfs() failed with no recovery strategy:",e);
         
       }
       return true;
     }
 
+
+    
+    pauseVfs(){
+      if(this.#mapS3FileToOFile_.size>0){
+        sqlite3.SQLite3Error.toss(
+          capi.SQLITE_MISUSE, "Cannot pause VFS",
+          this.vfsName,"because it has opened files."
+        );
+      }
+      if(this.#mapSAHToName.size>0){
+        capi.sqlite3_vfs_unregister(this.vfsName);
+        this.releaseAccessHandles();
+      }
+      return this;
+    }
+
+    
+    isPaused(){
+      return 0===this.#mapSAHToName.size;
+    }
+
+    
+    async unpauseVfs(){
+      if(0===this.#mapSAHToName.size){
+        return this.acquireAccessHandles(false).
+          then(()=>capi.sqlite3_vfs_register(this.#cVfs, 0),this);
+      }
+      return this;
+    }
 
     
     exportFile(name){
@@ -11859,6 +11909,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     unlink(filename){ return this.#p.deletePath(filename) }
 
     async removeVfs(){ return this.#p.removeVfs() }
+
+    pauseVfs(){ this.#p.pauseVfs(); return this; }
+    async unpauseVfs(){ return this.#p.unpauseVfs().then(()=>this); }
+    isPaused(){ return this.#p.isPaused() }
 
   };
 
@@ -11981,7 +12035,9 @@ if('undefined' !== typeof Module){
 
 
 
-});
+
+};
+
 
 
 
@@ -12007,6 +12063,7 @@ moduleRtn = readyPromise;
 
 const toExportForESM =
 (function(){
+  
   
   const originalInit = sqlite3InitModule;
   if(!originalInit){
@@ -12038,13 +12095,16 @@ const toExportForESM =
     
     return originalInit(...args).then((EmscriptenModule)=>{
       
+      
+      EmscriptenModule.runSQLite3PostLoadInit(EmscriptenModule);
       const s = EmscriptenModule.sqlite3;
       s.scriptInfo = initModuleState;
       
       if(ff.__isUnderTest) s.__isUnderTest = true;
       const f = s.asyncPostInit;
       delete s.asyncPostInit;
-      return f();
+      const rv = f();
+      return rv;
     }).catch((e)=>{
       console.error("Exception loading sqlite3 module:",e);
       throw e;
